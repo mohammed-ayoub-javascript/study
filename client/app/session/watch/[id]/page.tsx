@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { API } from '@/lib/api';
+import { messagesBoost } from './messages';
 
 const getShortMessages = () => {
   return new Promise((resolve, reject) => {
@@ -40,7 +41,6 @@ const Watch = () => {
   const [duration, setDuration] = useState(0);
   const [motivationMsg, setMotivationMsg] = useState('');
   const playerRef = useRef<any>(null);
-
   const [pomodoroPhase, setPomodoroPhase] = useState<'work' | 'break'>('work');
   const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(25 * 60);
   const [isPausedByPomodoro, setIsPausedByPomodoro] = useState(false);
@@ -48,6 +48,8 @@ const Watch = () => {
   const [shortMsgs, setMessages] = useState<string[]>([]);
   const [showMouseWarning, setShowMouseWarning] = useState(false);
   const [mouseWarningTimeout, setMouseWarningTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [achievementGlow, setAchievementGlow] = useState(false);
+  const [currentGlowColor, setCurrentGlowColor] = useState<string>('#ffffff');
 
   useEffect(() => {
     getShortMessages().then((data) => {
@@ -55,28 +57,7 @@ const Watch = () => {
     });
   }, []);
 
-  const milestoneMsgs = [
-    'أنت تمشي خطوة بخطوة… وهذا كافي 🤍',
-    'خذ نفسًا، ما تفعله الآن مهم 🌿',
-    'هدوءك وتركيزك يصنعان الفرق ',
-    'لا تستعجل النتائج… استمر فقط 🤍',
-    'كل مجهود صادق له أثر، حتى لو لم تشعر 🌙',
-    'أحسنت! هذا هو الطريق الصحيح 🔥',
-    'استمر! أنت أفضل مما كنت عليه 👏',
-    'طاقة قوية… لا توقف الآن ⚡',
-    'إنجازك واضح، كمل بنفس الروح 💪',
-    'هذا المستوى نريده دائمًا 🚀',
-    'لا تتراجع الآن، أنت بدأت صح 👊',
-    'ركز… لا تضيّع اللي بنيته 🔒',
-    'استمرارك قرار، فاختَر الصح ⚠️',
-    'لا أعذار، أنت قادر 🔥',
-    'كمّل، الراحة ليست الآن ⏳',
-    'تذكّر لماذا بدأت… وواصل 🧠❤️',
-    'هذا الجهد لن يضيع، أبدًا 🤍',
-    'أنت تبني نفسك بصمت، وهذا عظيم 🌱',
-    'يومًا ما ستشكر نفسك على هذا 🤍',
-    'ما تفعله الآن… حب لنفسك 💙',
-  ];
+ 
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -144,22 +125,37 @@ const Watch = () => {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
         setPlayedSeconds(currentTime);
 
+      
+        const boostMsg = messagesBoost.find(msg => msg.time === currentTime);
+        
+
         if (currentTime > 0 && currentTime % 10 === 0) {
           updateWatchedTimeOnServer(currentTime);
         }
 
+        if (boostMsg) {
+setMotivationMsg(boostMsg.content);
+    setCurrentGlowColor(boostMsg.color); // ضبط اللون من المصفوفة
+    setAchievementGlow(true); // تفعيل التوهج
+    
+    setTimeout(() => {
+        setMotivationMsg('');
+        setAchievementGlow(false);
+    }, 10000);
+        }
+
+
         if (currentTime > 0 && currentTime % 60 === 0) {
           const randomMsg = shortMsgs[Math.floor(Math.random() * shortMsgs.length)];
           setMotivationMsg(randomMsg);
-          setTimeout(() => setMotivationMsg(''), 5000);
+  
+  setTimeout(() => {
+    setMotivationMsg('');
+    setAchievementGlow(false); 
+  }, 5000);
         }
 
-        if (currentTime > 0 && currentTime % 1800 === 0) {
-          const milestone = milestoneMsgs[Math.floor(Math.random() * milestoneMsgs.length)];
-          setMotivationMsg(milestone);
-          setTimeout(() => setMotivationMsg(''), 10000);
-        }
-
+        
         if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
           setPomodoroTimeLeft((prev) => {
             if (prev <= 1) {
@@ -298,6 +294,28 @@ const Watch = () => {
   return (
     <div className="relative h-screen w-screen bg-black overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
+        <AnimatePresence>
+          {motivationMsg && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 1.5, filter: 'blur(20px)' }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 "
+            >
+              <div 
+                style={{ borderColor: currentGlowColor, boxShadow: `0 0 40px ${currentGlowColor}` }}
+                className="bg-black/60 backdrop-blur-xl px-12 py-6 rounded-3xl border-4 shadow-2xl transition-all duration-500"
+              >
+                <h2 
+                  style={{ color: currentGlowColor, textShadow: `0 0 20px ${currentGlowColor}` }}
+                  className="text-5xl font-black text-center italic tracking-widest uppercase"
+                >
+                  {motivationMsg}
+                </h2>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <YouTube
           videoId={getYouTubeId(videoData.VideoURL) || ''}
           onReady={onPlayerReady}
@@ -312,22 +330,25 @@ const Watch = () => {
       </div>
 
       <AnimatePresence>
-        {motivationMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-          >
-            <div className="bg-muted backdrop-blur-md px-8 py-4 rounded-2xl border-2 border-white/20 shadow-2xl">
-              <h2 className="text-3xl font-bold text-white text-center drop-shadow-md">
-                {motivationMsg}
-              </h2>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  {achievementGlow && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: [0, 0.8, 0.4, 0.8, 0], 
+      }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 4, repeat: Infinity }}
+      className="absolute inset-0 pointer-events-none z-40"
+      style={{
+        boxShadow: `inset 0 0 100px ${currentGlowColor}, inset 0 0 200px ${currentGlowColor}44`,
+        background: `radial-gradient(circle, transparent 40%, ${currentGlowColor}22 100%)`
+      }}
+    />
+  )}
+</AnimatePresence>
 
+
+      
       <AnimatePresence>
         {showMouseWarning && (
           <motion.div
