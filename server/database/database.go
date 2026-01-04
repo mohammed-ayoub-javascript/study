@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/mohammed-ayoub-js/backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -37,7 +37,7 @@ func ConnectDB() {
 
 	DB = database
 
-	err = DB.AutoMigrate(&models.User{}, &models.Session{})
+	err = DB.AutoMigrate(&models.User{}, &models.Session{}, &models.Ask{})
 	if err != nil {
 		log.Fatal("Migration Failed: ", err)
 	}

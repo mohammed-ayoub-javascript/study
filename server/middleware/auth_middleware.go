@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mohammed-ayoub-js/backend/auth"
+	"github.com/mohammed-ayoub-javascript/study-backend/auth"
 )
 
 func AuthMiddleware(authService *auth.AuthService) fiber.Handler {
@@ -17,7 +17,7 @@ func AuthMiddleware(authService *auth.AuthService) fiber.Handler {
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
 		} else {
-			tokenString = authHeader 
+			tokenString = authHeader
 		}
 
 		if tokenString == "" {

@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mohammed-ayoub-js/backend/models"
-	"github.com/mohammed-ayoub-js/backend/repositories"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/repositories"
 )
 
 type UserHandler struct {
@@ -61,7 +61,6 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-
 func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -78,4 +77,3 @@ func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
-

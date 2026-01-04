@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"github.com/google/uuid"
-	"github.com/mohammed-ayoub-js/backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
 	"gorm.io/gorm"
 )
 

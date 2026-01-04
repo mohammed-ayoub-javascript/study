@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mohammed-ayoub-js/backend/models"
-	"github.com/mohammed-ayoub-js/backend/repositories"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/repositories"
 )
 
 type SessionHandler struct {
@@ -16,7 +16,7 @@ func NewSessionHandler(repo *repositories.SessionRepository) *SessionHandler {
 }
 
 func (h *SessionHandler) CreateSession(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string) 
+	userID := c.Locals("userID").(string)
 
 	var session models.Session
 	if err := c.BodyParser(&session); err != nil {
@@ -115,4 +115,3 @@ func (h *SessionHandler) DeleteSession(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
-

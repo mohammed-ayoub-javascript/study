@@ -1,13 +1,12 @@
 package handlers
 
 import (
-
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mohammed-ayoub-js/backend/auth"
-	"github.com/mohammed-ayoub-js/backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/auth"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +24,7 @@ func NewAuthHandler(service *auth.AuthService, db *gorm.DB) *AuthHandler {
 
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	type RegisterRequest struct {
-		Name    string `json:"name"`
+		Name     string `json:"name"`
 		Password string `json:"password"`
 	}
 
@@ -41,7 +40,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 
 	user := models.User{
 		ID:       uuid.New(),
-		Name:  req.Name,
+		Name:     req.Name,
 		Password: hashedPassword,
 	}
 
@@ -52,10 +51,9 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	return c.Status(201).JSON(fiber.Map{"message": "User created successfully"})
 }
 
-
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	type LoginRequest struct {
-		Name    string `json:"name"`
+		Name     string `json:"name"`
 		Password string `json:"password"`
 	}
 
@@ -66,9 +64,9 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	var user models.User
 
-    if err := h.DB.Where("name = ?", req.Name).First(&user).Error; err != nil {
-        return c.Status(401).JSON(fiber.Map{"error": "Invalid name or password"})
-    }
+	if err := h.DB.Where("name = ?", req.Name).First(&user).Error; err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid name or password"})
+	}
 
 	if !h.Service.CheckPasswordHash(req.Password, user.Password) {
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid name or password"})
@@ -83,8 +81,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		Name:     "refresh_token",
 		Value:    tokens.RefreshToken,
 		Expires:  time.Now().Add(time.Hour * 24 * 7),
-		HTTPOnly: true, 
-		Secure:   false, 
+		HTTPOnly: true,
+		Secure:   false,
 	})
 
 	return c.JSON(tokens)

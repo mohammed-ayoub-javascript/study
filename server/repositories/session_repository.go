@@ -2,14 +2,13 @@ package repositories
 
 import (
 	"github.com/google/uuid"
-	"github.com/mohammed-ayoub-js/backend/models"
+	"github.com/mohammed-ayoub-javascript/study-backend/models"
 	"gorm.io/gorm"
 )
 
 type SessionRepository struct {
 	db *gorm.DB
 }
-
 
 func NewSessionRepository(db *gorm.DB) *SessionRepository {
 	return &SessionRepository{db: db}
@@ -52,21 +51,21 @@ func (r *SessionRepository) GetWithTargets(id uuid.UUID) (*models.Session, error
 }
 
 func (r *SessionRepository) UpdateFields(id string, fields map[string]interface{}) error {
-    return r.db.Model(&models.Session{}).Where("id = ?", id).Updates(fields).Error
+	return r.db.Model(&models.Session{}).Where("id = ?", id).Updates(fields).Error
 }
 
 func (r *SessionRepository) FindByUserID(userID string) ([]models.Session, error) {
-    var sessions []models.Session
-    err := r.db.Where("user_id = ?", userID).Find(&sessions).Error
-    return sessions, err
+	var sessions []models.Session
+	err := r.db.Where("user_id = ?", userID).Find(&sessions).Error
+	return sessions, err
 }
 
 func (r *SessionRepository) FindByIDAndUserID(id uuid.UUID, userID string) (models.Session, error) {
-    var session models.Session
-    err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&session).Error
-    return session, err
+	var session models.Session
+	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&session).Error
+	return session, err
 }
 
 func (r *SessionRepository) DeleteByIDAndUserID(id uuid.UUID, userID string) error {
-    return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Session{}).Error
+	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Session{}).Error
 }
