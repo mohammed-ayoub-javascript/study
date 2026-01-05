@@ -18,14 +18,8 @@ func ConnectDB() {
 	if err != nil {
 		log.Println("Warning: .env file not found, using system env variables")
 	}
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	dsn := os.Getenv("DB_URL")
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Africa/Algiers",
-		host, user, password, dbName, port)
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
