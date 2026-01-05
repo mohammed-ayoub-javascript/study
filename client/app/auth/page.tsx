@@ -195,7 +195,7 @@ const onRegister = async (data: z.infer<typeof registerSchema>) => {
                   <div className="space-y-1">
                     <Label>كلمة السر</Label>
 <div className='flex justify-center items-center flex-row gap-3'>
-                                          <Input  {...loginForm.register('password')} type={show == false ? "text" : "password"} />
+                                          <Input  {...registerForm.register('password')} type={show == false ? "text" : "password"} />
                     <div onClick={() => {
                       setShow(!show)
                     }}>
@@ -210,7 +210,7 @@ const onRegister = async (data: z.infer<typeof registerSchema>) => {
                   <div className="space-y-1">
                     <Label>تأكيد كلمة السر</Label>
 <div className='flex justify-center items-center flex-row gap-3'>
-                                          <Input  {...loginForm.register('password')} type={show == false ? "text" : "password"} />
+                                          <Input {...registerForm.register('confirmPassword')} type={show == false ? "text" : "password"} />
                     <div onClick={() => {
                       setShow(!show)
                     }}>
