@@ -21,36 +21,43 @@ func NewAuthHandler(service *auth.AuthService, db *gorm.DB) *AuthHandler {
 		DB:      db,
 	}
 }
-
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
-	type RegisterRequest struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-	}
+    type RegisterRequest struct {
+        Name     string `json:"name"`
+        Password string `json:"password"`
+    }
 
-	var req RegisterRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
-	}
+    var req RegisterRequest
+    if err := c.BodyParser(&req); err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+    }
 
-	hashedPassword, err := h.Service.HashPassword(req.Password)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Could not hash password"})
-	}
+    var existingUser models.User
+    result := h.DB.Where("name = ?", req.Name).First(&existingUser)
+    
+    if result.Error == nil {
+        return c.Status(400).JSON(fiber.Map{
+            "error": "اسم المستخدم مستخدم بالفعل، اختر اسماً آخر",
+        })
+    }
 
-	user := models.User{
-		ID:       uuid.New(),
-		Name:     req.Name,
-		Password: hashedPassword,
-	}
+    hashedPassword, err := h.Service.HashPassword(req.Password)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "Could not hash password"})
+    }
 
-	if err := h.DB.Create(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "User already exists or database error"})
-	}
+    user := models.User{
+        ID:       uuid.New(),
+        Name:     req.Name,
+        Password: hashedPassword,
+    }
 
-	return c.Status(201).JSON(fiber.Map{"message": "User created successfully"})
+    if err := h.DB.Create(&user).Error; err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+    }
+
+    return c.Status(201).JSON(fiber.Map{"message": "User created successfully"})
 }
-
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	type LoginRequest struct {
 		Name     string `json:"name"`

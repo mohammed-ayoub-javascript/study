@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -23,6 +22,7 @@ import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { API } from '@/lib/api';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   title: z.string().min(2, 'العنوان يجب أن يكون أكثر من حرفين'),
@@ -35,7 +35,12 @@ const formSchema = z.object({
 
 const SessionNew = () => {
   const route = useRouter();
-
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      route.push("/auth");
+    }
+  }, [route]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema) as any,
     defaultValues: {

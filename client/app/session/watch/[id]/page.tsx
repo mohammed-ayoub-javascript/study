@@ -12,6 +12,9 @@ import { toast } from 'sonner';
 import { API } from '@/lib/api';
 import { messagesBoost } from './messages';
 
+const DB_NAME = 'PomodoroDB';
+const DB_VERSION = 2;
+
 const getShortMessages = () => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('PomodoroDB', 1);
@@ -32,6 +35,51 @@ const getShortMessages = () => {
 
     request.onerror = () => reject('فشل فتح قاعدة البيانات');
   });
+};
+
+
+const openDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event: any) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('settings')) {
+        db.createObjectStore('settings');
+      }
+      if (!db.objectStoreNames.contains('videoProgress')) {
+        db.createObjectStore('videoProgress', { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+const saveToLocalDB = async (sessionId: string, time: number) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction('videoProgress', 'readwrite');
+    const store = transaction.objectStore('videoProgress');
+    store.put({ id: sessionId, watched_time: time, updatedAt: Date.now() });
+  } catch (err) {
+    console.error("IndexedDB Save Error:", err);
+  }
+};
+const getFromLocalDB = async (sessionId: string): Promise<any> => {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const transaction = db.transaction('videoProgress', 'readonly');
+      const store = transaction.objectStore('videoProgress');
+      const request = store.get(sessionId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    });
+  } catch (err) {
+    return null;
+  }
 };
 
 const Watch = () => {
@@ -70,6 +118,26 @@ const Watch = () => {
         setVideoData(res.data);
         const savedTime = res.data.watched_time || 0;
         setPlayedSeconds(savedTime);
+
+        const localProgress = await getFromLocalDB(id as string);
+      
+      const serverTime = res.data.watched_time || 0;
+      const localTime = localProgress ? localProgress.watched_time : 0;
+
+      const startTime = Math.max(serverTime, localTime);
+
+      setPlayedSeconds(startTime);
+
+      if (playerRef.current) {
+        playerRef.current.seekTo(startTime, true);
+        if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
+            playerRef.current.playVideo();
+        }
+      }
+      
+      if (localTime > serverTime) {
+        toast.info("تم استئناف الدراسة من حيث توقفت (حفظ محلي)");
+      }
       } catch (err) {
         console.error('خطأ في جلب بيانات الحصة', err);
       }
@@ -124,24 +192,22 @@ const Watch = () => {
       if (playerRef.current && playerRef.current.getPlayerState() === 1) {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
         setPlayedSeconds(currentTime);
-
-      
+        saveToLocalDB(id as string, currentTime);
+        
         const boostMsg = messagesBoost.find(msg => msg.time === currentTime);
         
 
-        if (currentTime > 0 && currentTime % 10 === 0) {
-          updateWatchedTimeOnServer(currentTime);
-        }
+        
 
         if (boostMsg) {
 setMotivationMsg(boostMsg.content);
-    setCurrentGlowColor(boostMsg.color); // ضبط اللون من المصفوفة
-    setAchievementGlow(true); // تفعيل التوهج
+    setCurrentGlowColor(boostMsg.color); 
+    setAchievementGlow(true); 
     
     setTimeout(() => {
         setMotivationMsg('');
         setAchievementGlow(false);
-    }, 10000);
+    }, 1000);
         }
 
 

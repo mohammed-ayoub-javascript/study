@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { API } from '@/lib/api';
+import { Eye, EyeClosed } from 'lucide-react';
 
 const loginSchema = z.object({
   user: z.string().min(3, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل'),
@@ -42,6 +43,9 @@ const registerSchema = z
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const route = useRouter();
+  const [message , setMessage] = useState("");
+  const [messageError , setMessageError] = useState("");
+  const [show , setShow] = useState(true);
 
   useEffect(() => {
     if (localStorage.getItem('token')) {
@@ -57,35 +61,47 @@ const Auth = () => {
     resolver: zodResolver(registerSchema),
   });
 
-  const onLogin = async (data: z.infer<typeof loginSchema>) => {
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API}/api/auth/login`, data);
+const onLogin = async (data: z.infer<typeof loginSchema>) => {
+  setLoading(true);
+  try {
+    const res = await axios.post(`${API}/api/auth/login`, {
+      name: data.user,
+      password: data.password
+    });
 
-      localStorage.setItem('token', res.data.AccessToken);
+    localStorage.setItem('token', res.data.AccessToken);
+    setMessage('تم تسجيل الدخول بنجاح! جاري تحويلك...');
 
-      setTimeout(() => {
-        route.push('/session');
-      }, 5000);
-    } catch (err : any) {
-      toast.error(err.response?.data?.error || 'Login Failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTimeout(() => {
+      route.push('/session');
+    }, 2000);
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.error || 'بيانات الدخول غير صحيحة';
+    setMessageError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+const onRegister = async (data: z.infer<typeof registerSchema>) => {
+  setLoading(true);
+  try {
+    const { confirmPassword, ...sendData } = data;
+    const payload = {
+      name: sendData.user, 
+      password: sendData.password
+    };
 
-  const onRegister = async (data: z.infer<typeof registerSchema>) => {
-    setLoading(true);
-    try {
-      const { confirmPassword, ...sendData } = data;
-      await axios.post(`${API}/api/auth/register`, sendData);
-      toast.success('Account created! Please login.');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Registration Failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+    await axios.post(`${API}/api/auth/register`, payload);
+    
+    setMessage("تم انشاء الحساب بنجاح يمكنك الان الضغط على زر تسجيل الدخول في القائمة فوق  و تسجيل الدخول للاستمرار");
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.error || 'حدث خطأ غير متوقع أثناء التسجيل';
+    setMessageError(errorMessage);
+    console.error("Registration Error:", err.response?.data);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen w-full relative bg-black">
@@ -114,6 +130,9 @@ const Auth = () => {
               <CardHeader>
                 <CardTitle>مرحبا بعدوتك</CardTitle>
                 <CardDescription>سجل الدخول للاستمرار</CardDescription>
+                <p className='text-red-500'> {messageError} </p>
+                <p className='text-green-500'> {message} </p>
+
               </CardHeader>
               <form onSubmit={loginForm.handleSubmit(onLogin)}>
                 <CardContent className="space-y-4">
@@ -126,14 +145,22 @@ const Auth = () => {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 ">
                     <Label>كلمة السر</Label>
-                    <Input {...loginForm.register('password')} type="كلمة السر" />
+                    <div className='flex justify-center items-center flex-row gap-3'>
+                                          <Input  {...loginForm.register('password')} type={show == false ? "text" : "password"} />
+                    <div onClick={() => {
+                      setShow(!show)
+                    }}>
+                      {show == true ? <Eye /> : <EyeClosed />}
+                    </div>
+                    </div>
                     {loginForm.formState.errors.password && (
                       <p className="text-sm text-red-500">
                         {loginForm.formState.errors.password.message}
                       </p>
                     )}
+                    
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -150,6 +177,9 @@ const Auth = () => {
               <CardHeader>
                 <CardTitle>انشاء حساب</CardTitle>
                 <CardDescription>انضم الينا مجانا عبر انشاء حساب مجاني تماما</CardDescription>
+                  <p className='text-red-500'> {messageError} </p>
+                <p className='text-green-500'> {message} </p>
+
               </CardHeader>
               <form onSubmit={registerForm.handleSubmit(onRegister)}>
                 <CardContent className="space-y-4">
@@ -164,8 +194,14 @@ const Auth = () => {
                   </div>
                   <div className="space-y-1">
                     <Label>كلمة السر</Label>
-                    <Input {...registerForm.register('password')} type="تأكيد كلمة السر" />
-                    {registerForm.formState.errors.password && (
+<div className='flex justify-center items-center flex-row gap-3'>
+                                          <Input  {...loginForm.register('password')} type={show == false ? "text" : "password"} />
+                    <div onClick={() => {
+                      setShow(!show)
+                    }}>
+                      {show == true ? <Eye /> : <EyeClosed />}
+                    </div>
+                    </div>                    {registerForm.formState.errors.password && (
                       <p className="text-sm text-red-500">
                         {registerForm.formState.errors.password.message}
                       </p>
@@ -173,8 +209,14 @@ const Auth = () => {
                   </div>
                   <div className="space-y-1">
                     <Label>تأكيد كلمة السر</Label>
-                    <Input {...registerForm.register('confirmPassword')} type="كلمة السر" />
-                    {registerForm.formState.errors.confirmPassword && (
+<div className='flex justify-center items-center flex-row gap-3'>
+                                          <Input  {...loginForm.register('password')} type={show == false ? "text" : "password"} />
+                    <div onClick={() => {
+                      setShow(!show)
+                    }}>
+                      {show == true ? <Eye /> : <EyeClosed />}
+                    </div>
+                    </div>                    {registerForm.formState.errors.confirmPassword && (
                       <p className="text-sm text-red-500">
                         {registerForm.formState.errors.confirmPassword.message}
                       </p>
