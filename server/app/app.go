@@ -1,8 +1,6 @@
 package app
 
 import (
-	
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -30,13 +28,13 @@ func SetupApp() *fiber.App {
 	db := database.DB
 
 	sessionRepo := repositories.NewSessionRepository(db)
-	userRepo := repositories.NewUserRepository(db)
+	//userRepo := repositories.NewUserRepository(db)
 	askRepo := repositories.NewAskRepository(db)
 
 	authService := auth.NewAuthService()
 	authHandler := handlers.NewAuthHandler(authService, db)
 	sessionHandler := handlers.NewSessionHandler(sessionRepo)
-	userHandler := handlers.NewUserHandler(userRepo)
+	//userHandler := handlers.NewUserHandler(userRepo)
 	askHandler := handlers.NewAskHandler(askRepo)
 
 	sessionRoutes := app.Group("/api/sessions", middleware.AuthMiddleware(authService))
@@ -78,4 +76,3 @@ func SetupApp() *fiber.App {
 
 	return app
 }
-
