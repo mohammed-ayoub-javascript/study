@@ -1,1 +1,1 @@
-export const API = 'https://endlinefocus.vercel.app';
+export const API = 'https://study-gamma-henna.vercel.app';
