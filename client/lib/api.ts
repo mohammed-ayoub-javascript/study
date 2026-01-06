@@ -1,1 +1,1 @@
-export const API = 'https://study-gamma-henna.vercel.app';
+export const API = 'http://127.0.0.1:8080';

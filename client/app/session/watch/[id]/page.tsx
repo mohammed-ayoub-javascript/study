@@ -37,7 +37,6 @@ const getShortMessages = () => {
   });
 };
 
-
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -64,7 +63,7 @@ const saveToLocalDB = async (sessionId: string, time: number) => {
     const store = transaction.objectStore('videoProgress');
     store.put({ id: sessionId, watched_time: time, updatedAt: Date.now() });
   } catch (err) {
-    console.error("IndexedDB Save Error:", err);
+    console.error('IndexedDB Save Error:', err);
   }
 };
 const getFromLocalDB = async (sessionId: string): Promise<any> => {
@@ -105,8 +104,6 @@ const Watch = () => {
     });
   }, []);
 
- 
-
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -120,24 +117,24 @@ const Watch = () => {
         setPlayedSeconds(savedTime);
 
         const localProgress = await getFromLocalDB(id as string);
-      
-      const serverTime = res.data.watched_time || 0;
-      const localTime = localProgress ? localProgress.watched_time : 0;
 
-      const startTime = Math.max(serverTime, localTime);
+        const serverTime = res.data.watched_time || 0;
+        const localTime = localProgress ? localProgress.watched_time : 0;
 
-      setPlayedSeconds(startTime);
+        const startTime = Math.max(serverTime, localTime);
 
-      if (playerRef.current) {
-        playerRef.current.seekTo(startTime, true);
-        if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
+        setPlayedSeconds(startTime);
+
+        if (playerRef.current) {
+          playerRef.current.seekTo(startTime, true);
+          if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
             playerRef.current.playVideo();
+          }
         }
-      }
-      
-      if (localTime > serverTime) {
-        toast.info("تم استئناف الدراسة من حيث توقفت (حفظ محلي)");
-      }
+
+        if (localTime > serverTime) {
+          toast.info('تم استئناف الدراسة من حيث توقفت (حفظ محلي)');
+        }
       } catch (err) {
         console.error('خطأ في جلب بيانات الحصة', err);
       }
@@ -193,35 +190,30 @@ const Watch = () => {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
         setPlayedSeconds(currentTime);
         saveToLocalDB(id as string, currentTime);
-        
-        const boostMsg = messagesBoost.find(msg => msg.time === currentTime);
-        
 
-        
+        const boostMsg = messagesBoost.find((msg) => msg.time === currentTime);
 
         if (boostMsg) {
-setMotivationMsg(boostMsg.content);
-    setCurrentGlowColor(boostMsg.color); 
-    setAchievementGlow(true); 
-    
-    setTimeout(() => {
-        setMotivationMsg('');
-        setAchievementGlow(false);
-    }, 1000);
-        }
+          setMotivationMsg(boostMsg.content);
+          setCurrentGlowColor(boostMsg.color);
+          setAchievementGlow(true);
 
+          setTimeout(() => {
+            setMotivationMsg('');
+            setAchievementGlow(false);
+          }, 1000);
+        }
 
         if (currentTime > 0 && currentTime % 60 === 0) {
           const randomMsg = shortMsgs[Math.floor(Math.random() * shortMsgs.length)];
           setMotivationMsg(randomMsg);
-  
-  setTimeout(() => {
-    setMotivationMsg('');
-    setAchievementGlow(false); 
-  }, 5000);
+
+          setTimeout(() => {
+            setMotivationMsg('');
+            setAchievementGlow(false);
+          }, 5000);
         }
 
-        
         if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
           setPomodoroTimeLeft((prev) => {
             if (prev <= 1) {
@@ -368,11 +360,11 @@ setMotivationMsg(boostMsg.content);
               exit={{ opacity: 0, scale: 1.5, filter: 'blur(20px)' }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 "
             >
-              <div 
+              <div
                 style={{ borderColor: currentGlowColor, boxShadow: `0 0 40px ${currentGlowColor}` }}
                 className="bg-black/60 backdrop-blur-xl px-12 py-6 rounded-3xl border-4 shadow-2xl transition-all duration-500"
               >
-                <h2 
+                <h2
                   style={{ color: currentGlowColor, textShadow: `0 0 20px ${currentGlowColor}` }}
                   className="text-5xl font-black text-center italic tracking-widest uppercase"
                 >
@@ -396,25 +388,23 @@ setMotivationMsg(boostMsg.content);
       </div>
 
       <AnimatePresence>
-  {achievementGlow && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ 
-        opacity: [0, 0.8, 0.4, 0.8, 0], 
-      }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 4, repeat: Infinity }}
-      className="absolute inset-0 pointer-events-none z-40"
-      style={{
-        boxShadow: `inset 0 0 100px ${currentGlowColor}, inset 0 0 200px ${currentGlowColor}44`,
-        background: `radial-gradient(circle, transparent 40%, ${currentGlowColor}22 100%)`
-      }}
-    />
-  )}
-</AnimatePresence>
+        {achievementGlow && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0, 0.8, 0.4, 0.8, 0],
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className="absolute inset-0 pointer-events-none z-40"
+            style={{
+              boxShadow: `inset 0 0 100px ${currentGlowColor}, inset 0 0 200px ${currentGlowColor}44`,
+              background: `radial-gradient(circle, transparent 40%, ${currentGlowColor}22 100%)`,
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-
-      
       <AnimatePresence>
         {showMouseWarning && (
           <motion.div

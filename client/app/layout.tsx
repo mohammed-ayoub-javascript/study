@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
-import {  Readex_Pro } from 'next/font/google';
+import { Readex_Pro } from 'next/font/google';
 import './globals.css';
-
+import { ThemeProvider } from '@/theme/theme-provider';
 const ar = Readex_Pro({
   weight: '400',
 });
 
 export const metadata: Metadata = {
   title: 'EndLine',
-description: "منصة ذكية لتنظيم الوقت والتركيز الدراسي، مصممة لمساعدتك على الإنجاز والتحرر من ضغوط الدراسة.",};
+  description:
+    'منصة ذكية لتنظيم الوقت والتركيز الدراسي، مصممة لمساعدتك على الإنجاز والتحرر من ضغوط الدراسة.',
+};
 
 export default function RootLayout({
   children,
@@ -17,7 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${ar.className} antialiased`}>{children}</body>
+      <body className={`${ar.className} antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

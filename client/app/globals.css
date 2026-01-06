@@ -46,7 +46,7 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-.dark {
+:root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.2101 0.0318 264.6645);
   --card: oklch(1 0 0);
@@ -101,7 +101,7 @@
   --spacing: 0.25rem;
 }
 
-:root {
+.dark {
   --background: oklch(0.1797 0.0043 308.1928);
   --foreground: oklch(0.8109 0 0);
   --card: oklch(0.1822 0 0);

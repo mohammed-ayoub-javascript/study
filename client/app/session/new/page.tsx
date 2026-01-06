@@ -36,9 +36,9 @@ const formSchema = z.object({
 const SessionNew = () => {
   const route = useRouter();
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
-      route.push("/auth");
+      route.push('/auth');
     }
   }, [route]);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -74,7 +74,6 @@ const SessionNew = () => {
 
   return (
     <div className="min-h-screen w-full relative">
-      
       <div
         className="absolute inset-0 z-0"
         style={{
