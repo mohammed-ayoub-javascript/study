@@ -118,9 +118,7 @@ const Auth = () => {
         className="flex justify-center items-center flex-col min-h-screen  p-4 relative z-10"
         style={{ zIndex: 99999 }}
       >
-        <h1 className="text-4xl font-bold mb-[120px] fixed top-[150px]">
-          سجل الدخول مجانا للبدأ FREE
-        </h1>
+        
         <Tabs defaultValue="login" className="w-full md:w-1/2">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>

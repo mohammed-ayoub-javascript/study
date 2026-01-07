@@ -1,14 +1,13 @@
 /* eslint-disable react-hooks/purity */
 'use client';
 import { cn } from '@/lib/utils';
-import React from 'react';
 import { BentoGrid, BentoGridItem } from '../ui/bento-grid';
 
 import { Brain, MessageCircle, TimerIcon } from 'lucide-react';
 
 export function BentoGridThird() {
   return (
-    <BentoGrid className="max-w-4xl mx-auto p-4 md:p-1 lg:p-0">
+    <BentoGrid className="max-w-4xl mt-5 mx-auto p-4 md:p-1 lg:p-0">
       {items.map((item, i) => (
         <BentoGridItem
           key={i}

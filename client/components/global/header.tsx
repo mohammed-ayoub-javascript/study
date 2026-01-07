@@ -1,4 +1,4 @@
-import { Github, Plus } from 'lucide-react';
+import { Book, Github, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import SettingsDialog from './client/dialog-settings';
@@ -19,6 +19,11 @@ const Header = () => {
         >
           <Button>
             <Github />
+          </Button>
+        </Link>
+        <Link href={"/book"}>
+          <Button>
+            <Book />
           </Button>
         </Link>
         <SettingsDialog />

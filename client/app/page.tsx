@@ -1,4 +1,5 @@
 import { AnimatedBeamDemo } from '@/components/landing/circle';
+import FAQs from '@/components/landing/FAQ';
 import { FeaturesSectionDemo } from '@/components/landing/features';
 import Footer from '@/components/landing/footer';
 import { BentoGridThird } from '@/components/landing/grid';
@@ -26,7 +27,7 @@ export default function Home() {
         />
         <div className=" h-screen flex justify-center items-center flex-col w-full">
           <h1 className="text-xl md:text-4xl lg:text-7xl font-bold">FOCUS</h1>
-          <h3 className="text-2xl font-bold mt-4 text-gray-500">
+          <h3 className="text-xl md:text-2xl font-bold mt-4 text-gray-500">
             ابدأ رحلة الدراسة بالتركيز التام الخالي من التشتت
           </h3>
           <Link className="w-1/4" href={'/auth'}>
@@ -37,7 +38,9 @@ export default function Home() {
         <FeaturesSectionDemo />
         <BentoGridThird />
         <AnimatedBeamDemo />
+        <FAQs />
         <Footer />
+
       </div>
     </div>
   );

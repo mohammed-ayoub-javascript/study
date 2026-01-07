@@ -96,7 +96,7 @@ const Watch = () => {
   const [showMouseWarning, setShowMouseWarning] = useState(false);
   const [mouseWarningTimeout, setMouseWarningTimeout] = useState<NodeJS.Timeout | null>(null);
   const [achievementGlow, setAchievementGlow] = useState(false);
-  const [currentGlowColor, setCurrentGlowColor] = useState<string>('#ffffff');
+  const [currentGlowColor, setCurrentGlowColor] = useState<string | null>('#ffffff');
 
   useEffect(() => {
     getShortMessages().then((data) => {
@@ -201,7 +201,8 @@ const Watch = () => {
           setTimeout(() => {
             setMotivationMsg('');
             setAchievementGlow(false);
-          }, 1000);
+            setCurrentGlowColor(null)
+          }, 3000);
         }
 
         if (currentTime > 0 && currentTime % 60 === 0) {
@@ -361,11 +362,11 @@ const Watch = () => {
               className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 "
             >
               <div
-                style={{ borderColor: currentGlowColor, boxShadow: `0 0 40px ${currentGlowColor}` }}
+                style={{ borderColor: currentGlowColor || "", boxShadow: `0 0 40px ${currentGlowColor}` }}
                 className="bg-black/60 backdrop-blur-xl px-12 py-6 rounded-3xl border-4 shadow-2xl transition-all duration-500"
               >
                 <h2
-                  style={{ color: currentGlowColor, textShadow: `0 0 20px ${currentGlowColor}` }}
+                  style={{ color: currentGlowColor || "", textShadow: `0 0 20px ${currentGlowColor}` }}
                   className="text-5xl font-black text-center italic tracking-widest uppercase"
                 >
                   {motivationMsg}
