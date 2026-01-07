@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { Volume2, VolumeOff } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import YouTube from 'react-youtube';
 
@@ -12,6 +13,7 @@ const Book = () => {
   const [isBreak, setIsBreak] = useState(false); 
 
   const [pageNumber, setPageNumber] = useState("");
+  const [audio , setAudio] = useState(true)
   const [note, setNote] = useState("");
   const [savedData, setSavedData] = useState([]);
 
@@ -79,13 +81,19 @@ const Book = () => {
     };
   };
 
+ function sound(){
+    setAudio(!audio)
+ }
+
+ 
+
 const videoOptions = {
   playerVars: {
-    autoplay: 1,
+    autoplay: true,
     controls: 0,
     rel: 0,          
     showinfo: 0,
-    mute: 0,         
+    mute: audio,         
     loop: 1,         
     playlist: videoId, 
     origin: typeof window !== 'undefined' ? window.location.origin : '',
@@ -121,13 +129,14 @@ const videoOptions = {
         </div>
       ) : (
         <div className="relative z-20 flex flex-col items-center p-6 md:p-12 h-screen overflow-y-auto animate-in fade-in slide-in-from-bottom duration-700">
-          
+           <div onClick={sound} className="bg-white/5 fixed right-0  p-3 top-2 mr-2 backdrop-blur-xl  rounded-[2rem] border border-white/10 shadow-2xl text-center transition-all hover:bg-white/10">
+        {audio == true ? <VolumeOff /> : <Volume2 /> }
+              </div>
           <header className="mb-12 text-center ">
             <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-2xl">
               وضع الكتاب <span className="text-orange-500">EndLine</span>
             </h1>
           </header>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 w-full max-w-6xl">
             <div className="space-y-6">
               <div className="bg-white/5 backdrop-blur-xl p-10 rounded-[2rem] border border-white/10 shadow-2xl text-center transition-all hover:bg-white/10">
@@ -140,6 +149,9 @@ const videoOptions = {
                   <button onClick={() => {setIsActive(false); setTimeLeft(25 * 60);}} className="px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all">إعادة</button>
                 </div>
               </div>
+
+
+              
 
               <div className="bg-black/40 backdrop-blur-md p-8 rounded-[2rem] border border-white/10 shadow-inner">
                 <h3 className="text-lg font-semibold mb-5 flex items-center gap-3 text-gray-200">
