@@ -49,8 +49,8 @@ export const getFromLocalDB = async (sessionId: string): Promise<any> => {
 
 export const getShortMessages = async (): Promise<string[]> => {
   try {
-    const db = await openDB(); 
-    
+    const db = await openDB();
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction('settings', 'readonly');
       const store = transaction.objectStore('settings');

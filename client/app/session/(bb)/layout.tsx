@@ -1,11 +1,11 @@
-import Header from "@/components/global/header";
-import NavButtons from "@/components/global/nav-buttons";
+import Header from '@/components/global/header';
+import NavButtons from '@/components/global/nav-buttons';
 
 export default function BBLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex flex-col h-screen overflow-hidden">
       <div
-        className="fixed inset-0 z-[-1]" 
+        className="fixed inset-0 z-[-1]"
         style={{
           backgroundColor: '#0a0a0a',
           backgroundImage: `
@@ -19,14 +19,13 @@ export default function BBLayout({ children }: { children: React.ReactNode }) {
 
       <Header />
 
-      
-     <main className="flex-1 overflow-y-auto pb-24 md:pb-8 z-10" dir="rtl">
-   {children}
-</main>
+      <main className="flex-1 overflow-y-auto pb-24 md:pb-8 z-10" dir="rtl">
+        {children}
+      </main>
 
-      <div className='border-t border-white/10 fixed bottom-0 w-full md:hidden bg-[#0a0a0a]/80 backdrop-blur-md z-50'>
+      <div className="border-t border-white/10 fixed bottom-0 w-full md:hidden bg-[#0a0a0a]/80 backdrop-blur-md z-50">
         <NavButtons />
       </div>
     </div>
-  )
+  );
 }

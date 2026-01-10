@@ -37,53 +37,60 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
     <AnimatePresence>
       {controlsVisible && (
         <motion.div
-          animate={{ 
-            opacity: 1, 
+          animate={{
+            opacity: 1,
             y: isPlaying ? 0 : -window.innerHeight / 4,
-            width: isPlaying ? "95%" : "280px",      
-            left: isPlaying ? "" : "40%",                             
+            width: isPlaying ? '95%' : '280px',
+            left: isPlaying ? '' : '40%',
           }}
           exit={{ opacity: 0, y: 50 }}
           transition={{
-            type: "spring",
-            damping: 25,     
-            stiffness: 150, 
-            mass: 1         
+            type: 'spring',
+            damping: 25,
+            stiffness: 150,
+            mass: 1,
           }}
           className="absolute bottom-10 z-50 flex justify-center pointer-events-none"
         >
-          <motion.div 
+          <motion.div
             layout
             className="flex items-center w-full h-full gap-2 p-4 rounded-3xl bg-black/60 backdrop-blur-2xl border border-white/20 pointer-events-auto shadow-2xl"
           >
             <motion.div layout className="flex items-center gap-1 flex-1 justify-start">
-              
-              <Button 
-                variant="ghost" size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onRewind}
                 className="text-white hover:bg-white/10 rounded-full"
               >
                 <FastForward size={20} fill="currentColor" />
               </Button>
 
-              <Button 
-                variant="ghost" size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={togglePlay}
                 className="text-white hover:bg-white/20 rounded-full w-14 h-14"
               >
-                {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
+                {isPlaying ? (
+                  <Pause size={28} fill="currentColor" />
+                ) : (
+                  <Play size={28} fill="currentColor" />
+                )}
               </Button>
 
-              <Button 
-                variant="ghost" size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onFastForward}
                 className="text-white hover:bg-white/10 rounded-full"
               >
                 <Rewind size={20} fill="currentColor" />
               </Button>
 
-              <Button 
-                variant="ghost" size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleMute}
                 className="text-white hover:bg-white/10 rounded-full ml-2"
               >
@@ -93,13 +100,15 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
 
             <AnimatePresence>
               {isPlaying && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "100%" }}
+                  animate={{ opacity: 1, width: '100%' }}
                   exit={{ opacity: 0, width: 0 }}
                   className="flex items-center gap-3 flex-1 px-4"
                 >
-                  <span className="text-[10px] font-mono text-white/70">{formatTime(playedSeconds)}</span>
+                  <span className="text-[10px] font-mono text-white/70">
+                    {formatTime(playedSeconds)}
+                  </span>
                   <Slider
                     value={[playedSeconds]}
                     max={duration}
@@ -107,14 +116,17 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
                     onValueChange={handleSeek}
                     className="cursor-pointer"
                   />
-                  <span className="text-[10px] font-mono text-white/70">{formatTime(duration)}</span>
+                  <span className="text-[10px] font-mono text-white/70">
+                    {formatTime(duration)}
+                  </span>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <motion.div layout className="flex items-center justify-end">
-              <Button 
-                variant="ghost" size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onReset}
                 className="text-white hover:bg-white/10 rounded-full w-12 h-12"
               >

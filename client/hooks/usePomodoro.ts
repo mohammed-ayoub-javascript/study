@@ -3,7 +3,7 @@ import { PomodoroPhase } from '@/types/types';
 
 export const usePomodoro = () => {
   const [phase, setPhase] = useState<PomodoroPhase>('work');
-  const [timeLeft, setTimeLeft] = useState(Number(localStorage.getItem("work")) || 25 * 60);
+  const [timeLeft, setTimeLeft] = useState(Number(localStorage.getItem('work')) || 25 * 60);
   const [isPausedByPomodoro, setIsPausedByPomodoro] = useState(false);
   const [showBreakMessage, setShowBreakMessage] = useState(false);
 
@@ -31,7 +31,7 @@ export const usePomodoro = () => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setPhase('work');
-            setTimeLeft(25 * 60); 
+            setTimeLeft(25 * 60);
             setIsPausedByPomodoro(false);
             setShowBreakMessage(false);
             return 0;

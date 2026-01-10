@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { API } from "@/lib/api"
-import { BookOpen, Loader2, ChevronLeft, Plus } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { API } from '@/lib/api';
+import { BookOpen, Loader2, ChevronLeft, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 interface Subject {
   ID: string;
@@ -14,35 +14,35 @@ interface Subject {
 }
 
 const Subjects = () => {
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const route = useRouter()
+  const route = useRouter();
 
   useEffect(() => {
     const fetchSubjects = async () => {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem('token');
       try {
         const response = await axios.get(`${API}/api/subjects`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setSubjects(response.data)
-        console.log(response.data)
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSubjects(response.data);
+        console.log(response.data);
       } catch (error) {
-        toast.error("فشل في تحميل المواد")
+        toast.error('فشل في تحميل المواد');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchSubjects()
-  }, [])
+    fetchSubjects();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   return (
@@ -53,12 +53,15 @@ const Subjects = () => {
           موادي الدراسية
         </h1>
         <div className="flex justify-center items-center flex-row gap-3">
-            <span className="text-sm text-gray-400">إجمالي المواد: {subjects.length}</span>
-            <Button variant={"outline"} onClick={() => {
-                route.push("/session/subjects/new")
-            }}>
-                <Plus />
-            </Button>
+          <span className="text-sm text-gray-400">إجمالي المواد: {subjects.length}</span>
+          <Button
+            variant={'outline'}
+            onClick={() => {
+              route.push('/session/subjects/new');
+            }}
+          >
+            <Plus />
+          </Button>
         </div>
       </div>
 
@@ -72,7 +75,7 @@ const Subjects = () => {
             <div
               key={subject.ID}
               onClick={() => {
-                route.push(`/session/subjects/${subject.ID}`)
+                route.push(`/session/subjects/${subject.ID}`);
               }}
               className="group p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm"
             >
@@ -95,7 +98,7 @@ const Subjects = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Subjects
+export default Subjects;

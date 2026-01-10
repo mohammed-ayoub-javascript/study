@@ -21,9 +21,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${ar.className} antialiased`}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="dark" 
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
           storageKey="endline-theme"

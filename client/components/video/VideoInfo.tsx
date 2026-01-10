@@ -35,7 +35,7 @@ export const VideoInfo: React.FC<VideoInfoProps> = ({
           <span>{Math.round(percentage)}%</span>
         </div>
         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-white transition-all duration-300"
             style={{ width: `${percentage}%` }}
           />

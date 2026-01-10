@@ -22,7 +22,7 @@ import { API } from '@/lib/api';
 interface Session {
   ID: string;
   Title: string;
-  SubjectId: string; 
+  SubjectId: string;
   Status: string;
   Points: number;
 }
@@ -48,10 +48,10 @@ const AllSessions = () => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      
+
       const [subjectsRes, sessionsRes] = await Promise.all([
         axios.get(`${API}/api/subjects`, { headers }),
-        axios.get(`${API}/api/sessions`, { headers })
+        axios.get(`${API}/api/sessions`, { headers }),
       ]);
 
       setSubjectsList(subjectsRes.data || []);
@@ -70,19 +70,19 @@ const AllSessions = () => {
   const groupedSessions = subjectsList.reduce((acc: any, subj) => {
     acc[subj.ID] = {
       title: subj.Title,
-      items: sessions.filter(s => s.SubjectId === subj.ID)
+      items: sessions.filter((s) => s.SubjectId === subj.ID),
     };
     return acc;
   }, {});
 
-  const unassignedSessions = sessions.filter(s => 
-    !s.SubjectId || !subjectsList.some(subj => subj.ID === s.SubjectId)
+  const unassignedSessions = sessions.filter(
+    (s) => !s.SubjectId || !subjectsList.some((subj) => subj.ID === s.SubjectId)
   );
 
   if (unassignedSessions.length > 0) {
     groupedSessions['unassigned'] = {
       title: 'حصص غير مصنفة',
-      items: unassignedSessions
+      items: unassignedSessions,
     };
   }
 
@@ -92,16 +92,19 @@ const AllSessions = () => {
     return status === 'completed' ? (
       <Badge className="bg-green-500/20 text-green-500 border-green-500/50">مكتمل</Badge>
     ) : (
-      <Badge variant="outline" className="text-yellow-600 border-yellow-600">غير مكتمل</Badge>
+      <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+        غير مكتمل
+      </Badge>
     );
   };
 
-  if (loading) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-      <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      <p className="text-muted-foreground animate-pulse">جاري ترتيب المكتبة...</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">جاري ترتيب المكتبة...</p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen w-full relative">
@@ -155,7 +158,10 @@ const AllSessions = () => {
                 <div className="text-left">
                   <p className="text-muted-foreground text-xs uppercase">إجمالي النقاط</p>
                   <p className="text-2xl font-mono font-bold text-orange-500">
-                    {groupedSessions[selectedSubjectId].items.reduce((a: number, b: any) => a + (b.Points || 0), 0)}
+                    {groupedSessions[selectedSubjectId].items.reduce(
+                      (a: number, b: any) => a + (b.Points || 0),
+                      0
+                    )}
                   </p>
                 </div>
               </CardHeader>
@@ -181,9 +187,9 @@ const AllSessions = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(session.Status)}</TableCell>
                           <TableCell className="text-center">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="hover:bg-primary hover:text-white"
                               onClick={() => router.push(`/session/watch/${session.ID}`)}
                             >

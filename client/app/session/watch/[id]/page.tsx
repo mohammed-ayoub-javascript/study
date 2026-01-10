@@ -64,19 +64,18 @@ const Watch = () => {
     formatTime: formatPomodoroTime,
   } = usePomodoro();
 
-  const {
-    motivationMsg,
-    achievementGlow,
-    currentGlowColor,
-  } = useMotivationMessages(playedSeconds, shortMsgs, id as string, isPlaying);
-
+  const { motivationMsg, achievementGlow, currentGlowColor } = useMotivationMessages(
+    playedSeconds,
+    shortMsgs,
+    id as string,
+    isPlaying
+  );
 
   const checkOrientation = useCallback(() => {
     if (!mountedRef.current) return;
-    
+
     const isPortraitMode = window.innerHeight > window.innerWidth;
     setIsPortrait(isPortraitMode);
-    
 
     if (isPortraitMode && window.innerWidth < 768) {
       setForceLandscape(true);
@@ -87,9 +86,10 @@ const Watch = () => {
 
   const attemptOrientationLock = useCallback(() => {
     if (typeof window === 'undefined' || !window.screen?.orientation?.lock) return;
-    
+
     try {
-      window.screen.orientation.lock('landscape')
+      window.screen.orientation
+        .lock('landscape')
         .then(() => {
           console.log('Screen orientation locked to landscape');
           setForceLandscape(false);
@@ -104,10 +104,8 @@ const Watch = () => {
 
   useEffect(() => {
     mountedRef.current = true;
-    
 
     checkOrientation();
-    
 
     const handleResize = () => {
       if (orientationCheckRef.current) {
@@ -115,17 +113,15 @@ const Watch = () => {
       }
       orientationCheckRef.current = setTimeout(checkOrientation, 200);
     };
-    
+
     orientationListenerRef.current = handleResize;
-    
+
     window.addEventListener('resize', handleResize, { passive: true });
     window.addEventListener('orientationchange', handleResize, { passive: true });
-    
 
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       attemptOrientationLock();
     }
-    
 
     getShortMessages().then((data) => {
       if (mountedRef.current) {
@@ -135,7 +131,6 @@ const Watch = () => {
 
     return () => {
       mountedRef.current = false;
-      
 
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -149,14 +144,12 @@ const Watch = () => {
         clearTimeout(orientationCheckRef.current);
         orientationCheckRef.current = null;
       }
-      
 
       if (orientationListenerRef.current) {
         window.removeEventListener('resize', orientationListenerRef.current);
         window.removeEventListener('orientationchange', orientationListenerRef.current);
         orientationListenerRef.current = null;
       }
-      
 
       if (typeof window !== 'undefined' && window.screen?.orientation?.unlock) {
         try {
@@ -183,18 +176,18 @@ const Watch = () => {
 
   const fetchSession = useCallback(async () => {
     if (!id || !mountedRef.current) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get(`${API}/api/sessions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000, 
+        timeout: 10000,
       });
 
       if (mountedRef.current) {
         setVideoData(res.data);
         const serverTime = res.data.watched_time || 0;
-        
+
         const localProgress = await getFromLocalDB(id as string);
         const localTime = localProgress ? localProgress.watched_time : 0;
 
@@ -218,43 +211,49 @@ const Watch = () => {
     fetchSession();
   }, [fetchSession]);
 
-  const updateWatchedTimeOnServer = useCallback(async (currentTime: number, status: string = 'pending') => {
-    try {
-      await axios.put(
-        `${API}/api/sessions/${id}`,
-        { watched_time: currentTime, status },
-        { 
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-          timeout: 5000 
-        }
-      );
-    } catch (err) {
-      console.error('Update failed', err);
-    }
-  }, [id]);
-
-  const saveProgress = useCallback((currentTime: number) => {
-    if (Math.abs(currentTime - lastSavedTimeRef.current) > 5) {
-      saveToLocalDB(id as string, currentTime);
-      lastSavedTimeRef.current = currentTime;
-    }
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        updateWatchedTimeOnServer(currentTime);
+  const updateWatchedTimeOnServer = useCallback(
+    async (currentTime: number, status: string = 'pending') => {
+      try {
+        await axios.put(
+          `${API}/api/sessions/${id}`,
+          { watched_time: currentTime, status },
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            timeout: 5000,
+          }
+        );
+      } catch (err) {
+        console.error('Update failed', err);
       }
-    }, 30000);
-  }, [id, updateWatchedTimeOnServer]);
+    },
+    [id]
+  );
+
+  const saveProgress = useCallback(
+    (currentTime: number) => {
+      if (Math.abs(currentTime - lastSavedTimeRef.current) > 5) {
+        saveToLocalDB(id as string, currentTime);
+        lastSavedTimeRef.current = currentTime;
+      }
+
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        if (mountedRef.current) {
+          updateWatchedTimeOnServer(currentTime);
+        }
+      }, 30000);
+    },
+    [id, updateWatchedTimeOnServer]
+  );
 
   const updateProgress = useCallback(() => {
     const player = playerRef.current;
     if (!player || !mountedRef.current || typeof player.getPlayerState !== 'function') return;
-    
-    if (player.getPlayerState() === 1) { 
+
+    if (player.getPlayerState() === 1) {
       const currentTime = Math.floor(player.getCurrentTime());
       if (mountedRef.current) {
         setPlayedSeconds(currentTime);
@@ -267,9 +266,9 @@ const Watch = () => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
     }
-    
+
     if (isPlaying && !isPausedByPomodoro && mountedRef.current) {
-      progressIntervalRef.current = setInterval(updateProgress, 2000); 
+      progressIntervalRef.current = setInterval(updateProgress, 2000);
     }
 
     return () => {
@@ -280,36 +279,47 @@ const Watch = () => {
     };
   }, [isPlaying, isPausedByPomodoro, updateProgress]);
 
-  const onPlayerReady: YouTubeProps['onReady'] = useCallback((event: { target: { getDuration: () => SetStateAction<number>; seekTo: (arg0: number, arg1: boolean) => void; }; }) => {
-    if (!mountedRef.current) return;
-    
-    playerRef.current = event.target;
-    setDuration(event.target.getDuration());
-    if (playedSeconds > 0) {
-      event.target.seekTo(playedSeconds, true);
-    }
-    resetControlsTimeout();
-  }, [playedSeconds]);
+  const onPlayerReady: YouTubeProps['onReady'] = useCallback(
+    (event: {
+      target: {
+        getDuration: () => SetStateAction<number>;
+        seekTo: (arg0: number, arg1: boolean) => void;
+      };
+    }) => {
+      if (!mountedRef.current) return;
 
-  const onPlayerEnd: YouTubeProps['onEnd'] = useCallback((event: { target: { getDuration: () => number; }; }) => {
-    if (!mountedRef.current) return;
-    
-    const finalTime = Math.floor(event.target.getDuration());
-    updateWatchedTimeOnServer(finalTime, 'completed');
-    toast.success('🎉 مبروك! أنهيت المهمة بنجاح.');
-    
-    setTimeout(() => {
-      if (mountedRef.current) {
-        router.back();
+      playerRef.current = event.target;
+      setDuration(event.target.getDuration());
+      if (playedSeconds > 0) {
+        event.target.seekTo(playedSeconds, true);
       }
-    }, 3000);
-  }, [updateWatchedTimeOnServer]);
+      resetControlsTimeout();
+    },
+    [playedSeconds]
+  );
+
+  const onPlayerEnd: YouTubeProps['onEnd'] = useCallback(
+    (event: { target: { getDuration: () => number } }) => {
+      if (!mountedRef.current) return;
+
+      const finalTime = Math.floor(event.target.getDuration());
+      updateWatchedTimeOnServer(finalTime, 'completed');
+      toast.success('🎉 مبروك! أنهيت المهمة بنجاح.');
+
+      setTimeout(() => {
+        if (mountedRef.current) {
+          router.back();
+        }
+      }, 3000);
+    },
+    [updateWatchedTimeOnServer]
+  );
 
   const getYouTubeId = useCallback((url: string) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return match && match[2].length === 11 ? match[2] : null;
   }, []);
 
   const handleMouseMove = useCallback(() => {
@@ -323,10 +333,10 @@ const Watch = () => {
     if (container) {
       container.addEventListener('mousemove', handleMouseMove, { passive: true });
     }
-    
+
     const handleKeyDownWrapper = (e: KeyboardEvent) => handleKeyDown(e);
     window.addEventListener('keydown', handleKeyDownWrapper, { passive: true });
-    
+
     return () => {
       if (container) {
         container.removeEventListener('mousemove', handleMouseMove);
@@ -339,19 +349,20 @@ const Watch = () => {
     return videoData ? getYouTubeId(videoData.VideoURL) : undefined;
   }, [videoData]);
 
-  if (!videoData) return (
-    <div className="h-screen bg-black text-white flex items-center justify-center font-mono">
-      LOADING SESSION...
-    </div>
-  );
+  if (!videoData)
+    return (
+      <div className="h-screen bg-black text-white flex items-center justify-center font-mono">
+        LOADING SESSION...
+      </div>
+    );
 
   if (forceLandscape && window.innerWidth < 768) {
     return <RotatePhone />;
   }
 
   return (
-    <div 
-      className="relative h-[100dvh] w-screen bg-black overflow-hidden flex items-center justify-center landscape:justify-start" 
+    <div
+      className="relative h-[100dvh] w-screen bg-black overflow-hidden flex items-center justify-center landscape:justify-start"
       ref={videoContainerRef}
     >
       <style jsx global>{`
@@ -365,7 +376,7 @@ const Watch = () => {
           left: 0;
           background-color: black;
         }
-        
+
         /* تحسين للهواتف في الوضع الأفقي */
         @media (max-width: 767px) and (orientation: landscape) {
           iframe {
@@ -373,22 +384,22 @@ const Watch = () => {
             transform: scale(1.1); /* تكبير بسيط لملء الشاشة */
           }
         }
-        
+
         /* للشاشات الكبيرة */
         @media (min-width: 768px) {
           iframe {
             object-fit: cover !important;
           }
         }
-        
-        body { 
-          overflow: hidden; 
-          margin: 0; 
-          padding: 0; 
+
+        body {
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
           user-select: none;
           background-color: black;
         }
-        
+
         /* منع التداخل مع عناصر التحكم على الهواتف */
         @media (max-width: 767px) {
           .video-controls-container {
@@ -398,16 +409,16 @@ const Watch = () => {
       `}</style>
 
       <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
-        <MotivationOverlay 
-          motivationMsg={motivationMsg} 
-          achievementGlow={achievementGlow} 
-          currentGlowColor={currentGlowColor} 
+        <MotivationOverlay
+          motivationMsg={motivationMsg}
+          achievementGlow={achievementGlow}
+          currentGlowColor={currentGlowColor}
         />
       </div>
 
       <div className="absolute pointer-events-none inset-0 z-0 bg-black w-full h-full flex items-center justify-center">
         <YouTube
-          key={youtubeId} 
+          key={youtubeId}
           videoId={youtubeId as any}
           opts={{
             height: '100%',
@@ -420,7 +431,7 @@ const Watch = () => {
               iv_load_policy: 3,
               modestbranding: 1,
               disablekb: 1,
-              playsinline: 1, 
+              playsinline: 1,
             },
           }}
           className="w-full h-full"
@@ -431,10 +442,10 @@ const Watch = () => {
       </div>
 
       <div className="absolute top-4 left-4 z-30 scale-75 sm:scale-100 origin-top-left">
-        <PomodoroTimer 
-          phase={pomodoroPhase} 
-          timeLeft={pomodoroTimeLeft} 
-          formatTime={formatPomodoroTime} 
+        <PomodoroTimer
+          phase={pomodoroPhase}
+          timeLeft={pomodoroTimeLeft}
+          formatTime={formatPomodoroTime}
         />
       </div>
 
@@ -462,11 +473,11 @@ const Watch = () => {
       </div>
 
       <div className="absolute top-4 right-4 z-30 hidden md:block">
-        <VideoInfo 
-          videoData={videoData} 
-          remainingTime={duration - playedSeconds} 
-          percentage={duration > 0 ? (playedSeconds / duration) * 100 : 0} 
-          playedSeconds={playedSeconds} 
+        <VideoInfo
+          videoData={videoData}
+          remainingTime={duration - playedSeconds}
+          percentage={duration > 0 ? (playedSeconds / duration) * 100 : 0}
+          playedSeconds={playedSeconds}
         />
       </div>
     </div>

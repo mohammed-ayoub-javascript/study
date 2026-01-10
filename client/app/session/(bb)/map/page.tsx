@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+'use client';
 
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
-import { Loader2, Map as MapIcon, ChevronLeft, AlertCircle } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { API } from '@/lib/api'
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Loader2, Map as MapIcon, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { API } from '@/lib/api';
 
 interface Book {
   id: string;
@@ -24,18 +24,18 @@ const Maps = () => {
   useEffect(() => {
     const fetchUserMaps = async () => {
       try {
-        const token = localStorage.getItem("token");
-        
+        const token = localStorage.getItem('token');
+
         const response = await axios.get(`${API}/api/books`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         setMaps(response.data);
       } catch (err: any) {
-        setError(err.response?.data?.message || "فشل في جلب الخرائط الدراسية");
+        setError(err.response?.data?.message || 'فشل في جلب الخرائط الدراسية');
       } finally {
         setLoading(false);
       }
@@ -55,7 +55,10 @@ const Maps = () => {
 
   if (error) {
     return (
-      <Alert variant="destructive" className="bg-red-950/20 border-red-900 text-red-400 max-w-md mx-auto">
+      <Alert
+        variant="destructive"
+        className="bg-red-950/20 border-red-900 text-red-400 max-w-md mx-auto"
+      >
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>خطأ في النظام</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
@@ -80,8 +83,8 @@ const Maps = () => {
           </div>
         ) : (
           maps.map((map) => (
-            <Card 
-              key={map.id} 
+            <Card
+              key={map.id}
               className="bg-stone-900 border-stone-800 hover:border-orange-900/50 transition-all cursor-pointer group shadow-lg"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -98,7 +101,7 @@ const Maps = () => {
               <CardContent>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="h-1.5 flex-1 bg-stone-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-700 w-[60%] shadow-[0_0_8px_rgba(194,65,12,0.5)]" /> 
+                    <div className="h-full bg-orange-700 w-[60%] shadow-[0_0_8px_rgba(194,65,12,0.5)]" />
                   </div>
                   <span className="text-[10px] text-stone-500 font-mono">60%</span>
                 </div>
@@ -108,7 +111,7 @@ const Maps = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Maps;

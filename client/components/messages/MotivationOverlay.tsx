@@ -14,7 +14,7 @@ export const MotivationOverlay: React.FC<MotivationOverlayProps> = ({
 }) => {
   return (
     <>
-      <AnimatePresence mode='wait'>
+      <AnimatePresence mode="wait">
         {motivationMsg && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
@@ -23,11 +23,17 @@ export const MotivationOverlay: React.FC<MotivationOverlayProps> = ({
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
           >
             <div
-              style={{ borderColor: currentGlowColor || "", boxShadow: `0 0 40px ${currentGlowColor}` }}
+              style={{
+                borderColor: currentGlowColor || '',
+                boxShadow: `0 0 40px ${currentGlowColor}`,
+              }}
               className="bg-black/60 backdrop-blur-xl px-12 py-6 rounded-3xl border-4 shadow-2xl transition-all duration-500"
             >
               <h2
-                style={{ color: currentGlowColor || "", textShadow: `0 0 20px ${currentGlowColor}` }}
+                style={{
+                  color: currentGlowColor || '',
+                  textShadow: `0 0 20px ${currentGlowColor}`,
+                }}
                 className="text-5xl font-black text-center italic tracking-widest uppercase"
               >
                 {motivationMsg}

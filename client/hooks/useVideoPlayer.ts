@@ -9,7 +9,7 @@ export const useVideoPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [controlsVisible, setControlsVisible] = useState(true);
-  
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(true);
 
@@ -41,20 +41,23 @@ export const useVideoPlayer = () => {
     }
   }, []);
 
-  const resetControlsTimeout = useCallback((keepVisible = false) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+  const resetControlsTimeout = useCallback(
+    (keepVisible = false) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
-    if (!keepVisible && isPlaying && isMounted.current) {
-      timeoutRef.current = setTimeout(() => {
-        if (isMounted.current) {
-          setControlsVisible(false);
-        }
-      }, 2000);
-    }
-  }, [isPlaying]);
+      if (!keepVisible && isPlaying && isMounted.current) {
+        timeoutRef.current = setTimeout(() => {
+          if (isMounted.current) {
+            setControlsVisible(false);
+          }
+        }, 2000);
+      }
+    },
+    [isPlaying]
+  );
 
   const handleSeek = useCallback((value: number[]) => {
     const newTime = value[0];
@@ -62,28 +65,31 @@ export const useVideoPlayer = () => {
     playerRef.current?.seekTo(newTime, true);
   }, []);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!playerRef.current) return;
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!playerRef.current) return;
 
-    switch (e.key) {
-      case ' ':
-        e.preventDefault();
-        togglePlay();
-        break;
-      case 'ArrowRight':
-        const currentTimeRight = playerRef.current.getCurrentTime();
-        playerRef.current.seekTo(currentTimeRight + 5, true);
-        toast.info("تقديم 5 ثوانٍ", { duration: 1000 });
-        break;
-      case 'ArrowLeft':
-        const currentTimeLeft = playerRef.current.getCurrentTime();
-        playerRef.current.seekTo(currentTimeLeft - 5, true);
-        toast.info("تأخير 5 ثوانٍ", { duration: 1000 });
-        break;
-    }
-    setControlsVisible(true);
-    resetControlsTimeout();
-  }, [togglePlay, resetControlsTimeout]);
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          const currentTimeRight = playerRef.current.getCurrentTime();
+          playerRef.current.seekTo(currentTimeRight + 5, true);
+          toast.info('تقديم 5 ثوانٍ', { duration: 1000 });
+          break;
+        case 'ArrowLeft':
+          const currentTimeLeft = playerRef.current.getCurrentTime();
+          playerRef.current.seekTo(currentTimeLeft - 5, true);
+          toast.info('تأخير 5 ثوانٍ', { duration: 1000 });
+          break;
+      }
+      setControlsVisible(true);
+      resetControlsTimeout();
+    },
+    [togglePlay, resetControlsTimeout]
+  );
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -93,9 +99,9 @@ export const useVideoPlayer = () => {
 
   useEffect(() => {
     const handleKeyDownWrapper = (e: KeyboardEvent) => handleKeyDown(e);
-    
+
     window.addEventListener('keydown', handleKeyDownWrapper);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDownWrapper);
     };
@@ -103,15 +109,15 @@ export const useVideoPlayer = () => {
 
   useEffect(() => {
     isMounted.current = true;
-    
+
     return () => {
       isMounted.current = false;
-      
+
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
-      
+
       if (playerRef.current) {
         try {
           playerRef.current.stopVideo();

@@ -19,7 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; 
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -35,7 +35,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   videoUrl: z.string().url('يرجى إدخال رابط فيديو صحيح'),
   note: z.string().optional(),
-  SubjectId: z.string().min(1, 'يرجى اختيار مادة'), 
+  SubjectId: z.string().min(1, 'يرجى اختيار مادة'),
   points: z.number().min(0).default(0),
 });
 
@@ -45,20 +45,20 @@ const SessionNew = () => {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
-      route.push("/");
+      route.push('/');
       return;
     }
 
     const fetchSubjects = async () => {
       try {
         const response = await axios.get(`${API}/api/subjects`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         setSubjects(response.data || []);
       } catch (error) {
-        toast.error("فشل في تحميل المواد");
+        toast.error('فشل في تحميل المواد');
       } finally {
         setLoadingSubjects(false);
       }
@@ -103,7 +103,9 @@ const SessionNew = () => {
       <div className="flex justify-center items-center w-full flex-col relative z-50">
         <Card className="w-full max-w-2xl flex flex-col mt-10 bg-transparent border-white/10 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center text-white">إضافة حصة دراسية جديدة</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-white">
+              إضافة حصة دراسية جديدة
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -115,7 +117,11 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>العنوان (Title)</FormLabel>
                       <FormControl>
-                        <Input placeholder="مثال: فيزياء - الوحدة الأولى" {...field} className="bg-white/5 border-white/10" />
+                        <Input
+                          placeholder="مثال: فيزياء - الوحدة الأولى"
+                          {...field}
+                          className="bg-white/5 border-white/10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -131,7 +137,9 @@ const SessionNew = () => {
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="bg-white/5 border-white/10">
-                            <SelectValue placeholder={loadingSubjects ? "جاري التحميل..." : "اختر المادة"} />
+                            <SelectValue
+                              placeholder={loadingSubjects ? 'جاري التحميل...' : 'اختر المادة'}
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -142,7 +150,9 @@ const SessionNew = () => {
                               </SelectItem>
                             ))
                           ) : (
-                            <div className="p-2 text-sm text-gray-500 text-center">لا توجد مواد مضافة</div>
+                            <div className="p-2 text-sm text-gray-500 text-center">
+                              لا توجد مواد مضافة
+                            </div>
                           )}
                         </SelectContent>
                       </Select>
@@ -158,7 +168,11 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>رابط الفيديو (Video URL)</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://youtube.com/..." {...field} className="bg-white/5 border-white/10" />
+                        <Input
+                          placeholder="https://youtube.com/..."
+                          {...field}
+                          className="bg-white/5 border-white/10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -172,7 +186,11 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>الوصف</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="ماذا ستتعلم في هذه الحصة؟" {...field} className="bg-white/5 border-white/10" />
+                        <Textarea
+                          placeholder="ماذا ستتعلم في هذه الحصة؟"
+                          {...field}
+                          className="bg-white/5 border-white/10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -186,15 +204,27 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>ملاحظات إضافية</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="أي ملاحظات تود تذكرها لاحقاً" {...field} className="bg-white/5 border-white/10" />
+                        <Textarea
+                          placeholder="أي ملاحظات تود تذكرها لاحقاً"
+                          {...field}
+                          className="bg-white/5 border-white/10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 transition-colors" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Plus className="ml-2" />}
+                <Button
+                  type="submit"
+                  className="w-full bg-orange-600 hover:bg-orange-700 transition-colors"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Plus className="ml-2" />
+                  )}
                   إضافة الحصة
                 </Button>
               </form>

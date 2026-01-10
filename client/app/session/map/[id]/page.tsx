@@ -1,10 +1,19 @@
 /* eslint-disable react-hooks/purity */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+'use client';
 import React, { useState, useCallback } from 'react';
-import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, Background, Controls, NodeChange, EdgeChange } from '@xyflow/react';
+import {
+  ReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
+  addEdge,
+  Background,
+  Controls,
+  NodeChange,
+  EdgeChange,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import TaskNode from './task.node'; 
+import TaskNode from './task.node';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,19 +23,19 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const nodeTypes = { taskNode: TaskNode };
 
 export default function StudyFlow() {
   const [nodes, setNodes] = useState<any>([]);
   const [edges, setEdges] = useState<any>([]);
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [subject, setSubject] = useState("");
+  const [taskTitle, setTaskTitle] = useState('');
+  const [subject, setSubject] = useState('');
 
   const onNodesChange = useCallback(
     (changes: NodeChange<never>[]) => setNodes((nds: any) => applyNodeChanges(changes, nds)),
@@ -38,31 +47,28 @@ export default function StudyFlow() {
     []
   );
 
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds: any) => addEdge(params, eds)),
-    []
-  );
+  const onConnect = useCallback((params: any) => setEdges((eds: any) => addEdge(params, eds)), []);
 
   const addNewTask = () => {
-    if (!taskTitle) return; 
+    if (!taskTitle) return;
 
     const id = `task-${Date.now()}`;
     const newNode = {
       id,
       type: 'taskNode',
       position: { x: Math.random() * 200, y: Math.random() * 200 },
-      data: { 
-        label: taskTitle, 
+      data: {
+        label: taskTitle,
         subject: subject || 'عام',
         isCompleted: false,
-        toggleCompleted: () => toggleTaskStatus(id) 
+        toggleCompleted: () => toggleTaskStatus(id),
       },
     };
-    
+
     setNodes((nds: any) => nds.concat(newNode));
-    
-    setTaskTitle("");
-    setSubject("");
+
+    setTaskTitle('');
+    setSubject('');
     setIsDialogOpen(false);
   };
 
@@ -82,8 +88,8 @@ export default function StudyFlow() {
       <div className="absolute top-4 left-4 z-10">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button >
-              <Plus  />
+            <Button>
+              <Plus />
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-stone-900 border-stone-800 text-white">
@@ -93,9 +99,9 @@ export default function StudyFlow() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">عنوان المهمة</Label>
-                <Input 
-                  id="title" 
-                  value={taskTitle} 
+                <Input
+                  id="title"
+                  value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
                   placeholder="مثلاً: حل تمارين الميكانيك"
                   className="bg-stone-800 border-stone-700 focus:border-orange-500"
@@ -103,9 +109,9 @@ export default function StudyFlow() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="subject">المادة</Label>
-                <Input 
-                  id="subject" 
-                  value={subject} 
+                <Input
+                  id="subject"
+                  value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="فيزياء، فلسفة..."
                   className="bg-stone-800 border-stone-700 focus:border-orange-500"
@@ -130,7 +136,7 @@ export default function StudyFlow() {
         nodeTypes={nodeTypes}
         fitView
       >
-        <Background color="#333"  />
+        <Background color="#333" />
         <Controls />
       </ReactFlow>
     </div>

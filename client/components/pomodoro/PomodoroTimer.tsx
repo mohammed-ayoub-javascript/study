@@ -7,11 +7,7 @@ interface PomodoroTimerProps {
   formatTime: (seconds: number) => string;
 }
 
-export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
-  phase,
-  timeLeft,
-  formatTime,
-}) => {
+export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ phase, timeLeft, formatTime }) => {
   return (
     <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm p-3 rounded-xl border border-white/20 shadow-lg z-30">
       <div className="flex flex-col items-center">
@@ -20,10 +16,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         >
           {phase === 'work' ? 'عمل' : 'راحة'}
         </div>
-        <div className="text-2xl font-mono font-bold text-white">
-          {formatTime(timeLeft)}
-        </div>
-        
+        <div className="text-2xl font-mono font-bold text-white">{formatTime(timeLeft)}</div>
       </div>
     </div>
   );
