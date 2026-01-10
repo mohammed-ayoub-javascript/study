@@ -82,7 +82,7 @@ func (a *AuthService) GenerateAccessToken(user *models.User) (string, error) {
 	return token.SignedString([]byte(a.config.AccessTokenSecret))
 }
 
-func (a *AuthService) GenerateRefreshToken(userID string) (string, error) {
+func (a *AuthService) GenerateRefreshToken(UserId string) (string, error) {
 	randomBytes := make([]byte, 32)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
@@ -92,7 +92,7 @@ func (a *AuthService) GenerateRefreshToken(userID string) (string, error) {
 	refreshToken := base64.URLEncoding.EncodeToString(randomBytes)
 
 	store := models.RefreshTokenStore{
-		UserID:       userID,
+		UserID:       UserId,
 		RefreshToken: refreshToken,
 		ExpiresAt:    time.Now().Add(a.config.RefreshTokenExpiry),
 		CreatedAt:    time.Now(),
@@ -170,13 +170,13 @@ func (a *AuthService) GenerateTokenPair(user *models.User) (*models.TokenPair, e
 }
 
 func (a *AuthService) RefreshToken(refreshToken string) (*models.TokenPair, error) {
-	userID, err := a.ValidateRefreshToken(refreshToken)
+	UserId, err := a.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return nil, err
 	}
 
 	user := &models.User{
-		ID: userID,
+		ID: UserId,
 	}
 
 	tokenPair, err := a.GenerateTokenPair(user)

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Readex_Pro } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/theme/theme-provider';
+
 const ar = Readex_Pro({
   weight: '400',
 });
@@ -18,9 +19,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${ar.className} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider 
+          attribute="class" 
+          defaultTheme="dark" 
+          enableSystem={false}
+          disableTransitionOnChange
+          storageKey="endline-theme"
+        >
           {children}
         </ThemeProvider>
       </body>

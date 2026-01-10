@@ -16,7 +16,13 @@ func NewSessionHandler(repo *repositories.SessionRepository) *SessionHandler {
 }
 
 func (h *SessionHandler) CreateSession(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
+
+	userID, ok := c.Locals("UserId").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
 
 	var session models.Session
 	if err := c.BodyParser(&session); err != nil {
@@ -25,7 +31,7 @@ func (h *SessionHandler) CreateSession(c *fiber.Ctx) error {
 		})
 	}
 
-	session.UserID = userID
+	session.UserId = userID
 
 	if err := h.repo.Create(&session); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -37,7 +43,12 @@ func (h *SessionHandler) CreateSession(c *fiber.Ctx) error {
 }
 
 func (h *SessionHandler) GetSessions(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
+	userID, ok := c.Locals("UserId").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
 
 	sessions, err := h.repo.FindByUserID(userID)
 	if err != nil {
@@ -50,13 +61,21 @@ func (h *SessionHandler) GetSessions(c *fiber.Ctx) error {
 }
 
 func (h *SessionHandler) GetSession(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
+
+	userID, ok := c.Locals("UserId").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid session ID",
 		})
 	}
+
 
 	session, err := h.repo.FindByIDAndUserID(id, userID)
 	if err != nil {
@@ -69,11 +88,25 @@ func (h *SessionHandler) GetSession(c *fiber.Ctx) error {
 }
 
 func (h *SessionHandler) UpdateSession(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
+
+	userID, ok := c.Locals("UserId").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	
 	id := c.Params("id")
 
-	sessionID, _ := uuid.Parse(id)
-	_, err := h.repo.FindByIDAndUserID(sessionID, userID)
+	sessionID, err := uuid.Parse(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid session ID",
+		})
+	}
+
+
+	_, err = h.repo.FindByIDAndUserID(sessionID, userID)
 	if err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "You don't have permission to update this session",
@@ -87,7 +120,14 @@ func (h *SessionHandler) UpdateSession(c *fiber.Ctx) error {
 		})
 	}
 
+
 	delete(updates, "user_id")
+	delete(updates, "UserID")
+	delete(updates, "UserId")
+	delete(updates, "ID")
+	delete(updates, "id")
+	delete(updates, "CreatedAt")
+	delete(updates, "created_at")
 
 	if err := h.repo.UpdateFields(id, updates); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -95,11 +135,21 @@ func (h *SessionHandler) UpdateSession(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "updated_fields": updates})
+	return c.JSON(fiber.Map{
+		"status": "success", 
+		"message": "Session updated successfully",
+		"updated_fields": updates,
+	})
 }
 
 func (h *SessionHandler) DeleteSession(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
+	userID, ok := c.Locals("UserId").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

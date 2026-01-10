@@ -1,483 +1,473 @@
-/* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, SetStateAction } from 'react';
 import YouTube, { YouTubeProps } from 'react-youtube';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Progress } from '@/components/ui/progress';
-import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { API } from '@/lib/api';
-import { messagesBoost } from './messages';
-
-const DB_NAME = 'PomodoroDB';
-const DB_VERSION = 2;
-
-const getShortMessages = () => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('PomodoroDB', 1);
-
-    request.onsuccess = () => {
-      const db = request.result;
-      const transaction = db.transaction('settings', 'readonly');
-      const store = transaction.objectStore('settings');
-      const getRequest = store.get('shortMsgs');
-
-      getRequest.onsuccess = () => {
-        const msgs = getRequest.result?.value || [];
-        resolve(msgs);
-      };
-
-      getRequest.onerror = () => reject('فشل جلب البيانات');
-    };
-
-    request.onerror = () => reject('فشل فتح قاعدة البيانات');
-  });
-};
-
-const openDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings');
-      }
-      if (!db.objectStoreNames.contains('videoProgress')) {
-        db.createObjectStore('videoProgress', { keyPath: 'id' });
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-};
-
-const saveToLocalDB = async (sessionId: string, time: number) => {
-  try {
-    const db = await openDB();
-    const transaction = db.transaction('videoProgress', 'readwrite');
-    const store = transaction.objectStore('videoProgress');
-    store.put({ id: sessionId, watched_time: time, updatedAt: Date.now() });
-  } catch (err) {
-    console.error('IndexedDB Save Error:', err);
-  }
-};
-const getFromLocalDB = async (sessionId: string): Promise<any> => {
-  try {
-    const db = await openDB();
-    return new Promise((resolve) => {
-      const transaction = db.transaction('videoProgress', 'readonly');
-      const store = transaction.objectStore('videoProgress');
-      const request = store.get(sessionId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => resolve(null);
-    });
-  } catch (err) {
-    return null;
-  }
-};
+import { getShortMessages, getFromLocalDB, saveToLocalDB } from '@/database/database';
+import { useVideoPlayer } from '@/hooks/useVideoPlayer';
+import { usePomodoro } from '@/hooks/usePomodoro';
+import { useMotivationMessages } from '@/hooks/useMotivationMessages';
+import { VideoData } from '@/types/types';
+import { VideoControls } from '@/components/video/VideoControls';
+import { MotivationOverlay } from '@/components/messages/MotivationOverlay';
+import { BreakMessage } from '@/components/messages/BreakMessage';
+import { VideoInfo } from '@/components/video/VideoInfo';
+import { PomodoroTimer } from '@/components/pomodoro/PomodoroTimer';
+import RotatePhone from '@/components/ui/RotatePhone';
 
 const Watch = () => {
   const { id } = useParams();
-  const [videoData, setVideoData] = useState<any>(null);
-  const [playedSeconds, setPlayedSeconds] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [motivationMsg, setMotivationMsg] = useState('');
-  const playerRef = useRef<any>(null);
-  const [pomodoroPhase, setPomodoroPhase] = useState<'work' | 'break'>('work');
-  const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(25 * 60);
-  const [isPausedByPomodoro, setIsPausedByPomodoro] = useState(false);
-  const [showBreakMessage, setShowBreakMessage] = useState(false);
+  const router = useRouter();
+  const [videoData, setVideoData] = useState<VideoData | null>(null);
   const [shortMsgs, setMessages] = useState<string[]>([]);
-  const [showMouseWarning, setShowMouseWarning] = useState(false);
-  const [mouseWarningTimeout, setMouseWarningTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [achievementGlow, setAchievementGlow] = useState(false);
-  const [currentGlowColor, setCurrentGlowColor] = useState<string | null>('#ffffff');
+  const [, setIsPortrait] = useState(false);
+  const [forceLandscape, setForceLandscape] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedTimeRef = useRef<number>(0);
+  const orientationCheckRef = useRef<NodeJS.Timeout | null>(null);
+  const orientationListenerRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    getShortMessages().then((data) => {
-      setMessages(data as string[]);
-    });
+  const {
+    playerRef,
+    playedSeconds,
+    setPlayedSeconds,
+    duration,
+    setDuration,
+    isPlaying,
+    setIsPlaying,
+    isMuted,
+    controlsVisible,
+    setControlsVisible,
+    togglePlay,
+    toggleMute,
+    resetControlsTimeout,
+    handleSeek,
+    handleKeyDown,
+    formatTime,
+  } = useVideoPlayer();
+
+  const {
+    phase: pomodoroPhase,
+    timeLeft: pomodoroTimeLeft,
+    isPausedByPomodoro,
+    showBreakMessage,
+    setIsPausedByPomodoro,
+    setShowBreakMessage,
+    formatTime: formatPomodoroTime,
+  } = usePomodoro();
+
+  const {
+    motivationMsg,
+    achievementGlow,
+    currentGlowColor,
+  } = useMotivationMessages(playedSeconds, shortMsgs, id as string, isPlaying);
+
+
+  const checkOrientation = useCallback(() => {
+    if (!mountedRef.current) return;
+    
+    const isPortraitMode = window.innerHeight > window.innerWidth;
+    setIsPortrait(isPortraitMode);
+    
+
+    if (isPortraitMode && window.innerWidth < 768) {
+      setForceLandscape(true);
+    } else {
+      setForceLandscape(false);
+    }
+  }, []);
+
+  const attemptOrientationLock = useCallback(() => {
+    if (typeof window === 'undefined' || !window.screen?.orientation?.lock) return;
+    
+    try {
+      window.screen.orientation.lock('landscape')
+        .then(() => {
+          console.log('Screen orientation locked to landscape');
+          setForceLandscape(false);
+        })
+        .catch((err: any) => {
+          console.log('Orientation lock not supported:', err);
+        });
+    } catch (err) {
+      console.log('Orientation lock error:', err);
+    }
   }, []);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const res = await axios.get(`${API}/api/sessions/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        setVideoData(res.data);
-        const savedTime = res.data.watched_time || 0;
-        setPlayedSeconds(savedTime);
+    mountedRef.current = true;
+    
 
-        const localProgress = await getFromLocalDB(id as string);
+    checkOrientation();
+    
 
-        const serverTime = res.data.watched_time || 0;
-        const localTime = localProgress ? localProgress.watched_time : 0;
+    const handleResize = () => {
+      if (orientationCheckRef.current) {
+        clearTimeout(orientationCheckRef.current);
+      }
+      orientationCheckRef.current = setTimeout(checkOrientation, 200);
+    };
+    
+    orientationListenerRef.current = handleResize;
+    
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('orientationchange', handleResize, { passive: true });
+    
 
-        const startTime = Math.max(serverTime, localTime);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      attemptOrientationLock();
+    }
+    
 
-        setPlayedSeconds(startTime);
+    getShortMessages().then((data) => {
+      if (mountedRef.current) {
+        setMessages(data as string[]);
+      }
+    });
 
-        if (playerRef.current) {
-          playerRef.current.seekTo(startTime, true);
-          if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
-            playerRef.current.playVideo();
-          }
+    return () => {
+      mountedRef.current = false;
+      
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (orientationCheckRef.current) {
+        clearTimeout(orientationCheckRef.current);
+        orientationCheckRef.current = null;
+      }
+      
+
+      if (orientationListenerRef.current) {
+        window.removeEventListener('resize', orientationListenerRef.current);
+        window.removeEventListener('orientationchange', orientationListenerRef.current);
+        orientationListenerRef.current = null;
+      }
+      
+
+      if (typeof window !== 'undefined' && window.screen?.orientation?.unlock) {
+        try {
+          window.screen.orientation.unlock();
+        } catch (err) {
+          console.log('Orientation unlock error:', err);
         }
-
-        if (localTime > serverTime) {
-          toast.info('تم استئناف الدراسة من حيث توقفت (حفظ محلي)');
-        }
-      } catch (err) {
-        console.error('خطأ في جلب بيانات الحصة', err);
       }
     };
-    fetchSession();
+  }, []);
+
+  useEffect(() => {
+    if (!playerRef.current || !mountedRef.current) return;
+
+    if (isPausedByPomodoro) {
+      playerRef.current.pauseVideo();
+      setIsPlaying(false);
+      toast.warning('⚠️ وقت الراحة! تم إيقاف المقطع مؤقتاً.');
+    } else if (pomodoroPhase === 'work' && mountedRef.current) {
+      playerRef.current.playVideo();
+      setIsPlaying(true);
+    }
+  }, [isPausedByPomodoro, pomodoroPhase]);
+
+  const fetchSession = useCallback(async () => {
+    if (!id || !mountedRef.current) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/api/sessions/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000, 
+      });
+
+      if (mountedRef.current) {
+        setVideoData(res.data);
+        const serverTime = res.data.watched_time || 0;
+        
+        const localProgress = await getFromLocalDB(id as string);
+        const localTime = localProgress ? localProgress.watched_time : 0;
+
+        const timeToSeek = localTime > serverTime ? localTime : serverTime;
+        setPlayedSeconds(timeToSeek);
+
+        if (playerRef.current && playerRef.current.seekTo) {
+          playerRef.current.seekTo(timeToSeek, true);
+        }
+
+        if (localTime > serverTime && mountedRef.current) {
+          toast.info('تم استئناف الدراسة من حيث توقفت (حفظ محلي)');
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching session:', err);
+    }
   }, [id]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      const threshold = 50;
+    fetchSession();
+  }, [fetchSession]);
 
-      const isNearEdge =
-        e.clientX <= threshold ||
-        e.clientX >= windowWidth - threshold ||
-        e.clientY <= threshold ||
-        e.clientY >= windowHeight - threshold;
-
-      if (isNearEdge) {
-        setShowMouseWarning(true);
-
-        if (mouseWarningTimeout) {
-          clearTimeout(mouseWarningTimeout);
-        }
-
-        const timeout = setTimeout(() => {
-          setShowMouseWarning(false);
-        }, 5000);
-
-        setMouseWarningTimeout(timeout);
-      } else {
-        setShowMouseWarning(false);
-        if (mouseWarningTimeout) {
-          clearTimeout(mouseWarningTimeout);
-        }
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (mouseWarningTimeout) {
-        clearTimeout(mouseWarningTimeout);
-      }
-    };
-  }, [mouseWarningTimeout]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (playerRef.current && playerRef.current.getPlayerState() === 1) {
-        const currentTime = Math.floor(playerRef.current.getCurrentTime());
-        setPlayedSeconds(currentTime);
-        saveToLocalDB(id as string, currentTime);
-
-        const boostMsg = messagesBoost.find((msg) => msg.time === currentTime);
-
-        if (boostMsg) {
-          setMotivationMsg(boostMsg.content);
-          setCurrentGlowColor(boostMsg.color);
-          setAchievementGlow(true);
-
-          setTimeout(() => {
-            setMotivationMsg('');
-            setAchievementGlow(false);
-            setCurrentGlowColor(null)
-          }, 3000);
-        }
-
-        if (currentTime > 0 && currentTime % 60 === 0) {
-          const randomMsg = shortMsgs[Math.floor(Math.random() * shortMsgs.length)];
-          setMotivationMsg(randomMsg);
-
-          setTimeout(() => {
-            setMotivationMsg('');
-            setAchievementGlow(false);
-          }, 5000);
-        }
-
-        if (pomodoroPhase === 'work' && !isPausedByPomodoro) {
-          setPomodoroTimeLeft((prev) => {
-            if (prev <= 1) {
-              setPomodoroPhase('break');
-              setPomodoroTimeLeft(5 * 60);
-              setIsPausedByPomodoro(true);
-              setShowBreakMessage(true);
-
-              if (playerRef.current) {
-                playerRef.current.pauseVideo();
-              }
-
-              return 0;
-            }
-            return prev - 1;
-          });
-        }
-      }
-
-      if (pomodoroPhase === 'break' && isPausedByPomodoro) {
-        setPomodoroTimeLeft((prev) => {
-          if (prev <= 1) {
-            setPomodoroPhase('work');
-            setPomodoroTimeLeft(20 * 60);
-            setIsPausedByPomodoro(false);
-            setShowBreakMessage(false);
-
-            if (playerRef.current) {
-              playerRef.current.playVideo();
-            }
-
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [playedSeconds, pomodoroPhase, isPausedByPomodoro]);
-
-  const updateWatchedTimeOnServer = async (currentTime: number, status: string = 'pending') => {
+  const updateWatchedTimeOnServer = useCallback(async (currentTime: number, status: string = 'pending') => {
     try {
       await axios.put(
         `${API}/api/sessions/${id}`,
-        {
-          watched_time: currentTime,
-          status: status,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
+        { watched_time: currentTime, status },
+        { 
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          timeout: 5000 
         }
-      );
-
-      localStorage.setItem(
-        'points',
-        String((Number(localStorage.getItem('points')) || 0) + videoData.Points)
       );
     } catch (err) {
       console.error('Update failed', err);
     }
-  };
+  }, [id]);
 
-  const onPlayerReady: YouTubeProps['onReady'] = async (event) => {
+  const saveProgress = useCallback((currentTime: number) => {
+    if (Math.abs(currentTime - lastSavedTimeRef.current) > 5) {
+      saveToLocalDB(id as string, currentTime);
+      lastSavedTimeRef.current = currentTime;
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) {
+        updateWatchedTimeOnServer(currentTime);
+      }
+    }, 30000);
+  }, [id, updateWatchedTimeOnServer]);
+
+  const updateProgress = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || !mountedRef.current || typeof player.getPlayerState !== 'function') return;
+    
+    if (player.getPlayerState() === 1) { 
+      const currentTime = Math.floor(player.getCurrentTime());
+      if (mountedRef.current) {
+        setPlayedSeconds(currentTime);
+      }
+      saveProgress(currentTime);
+    }
+  }, [saveProgress]);
+
+  useEffect(() => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    
+    if (isPlaying && !isPausedByPomodoro && mountedRef.current) {
+      progressIntervalRef.current = setInterval(updateProgress, 2000); 
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, [isPlaying, isPausedByPomodoro, updateProgress]);
+
+  const onPlayerReady: YouTubeProps['onReady'] = useCallback((event: { target: { getDuration: () => SetStateAction<number>; seekTo: (arg0: number, arg1: boolean) => void; }; }) => {
+    if (!mountedRef.current) return;
+    
     playerRef.current = event.target;
     setDuration(event.target.getDuration());
-    const calculatedPoints = parseFloat(((event.target.getDuration() / 60) * 0.1).toFixed(2));
-
-    if (videoData && videoData.Points === 0) {
-      try {
-        await axios.put(
-          `${API}/api/sessions/${id}`,
-          {
-            points: calculatedPoints,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
-        );
-        console.log('Points auto-calculated:', calculatedPoints);
-      } catch (err) {
-        console.error('Failed to save auto-calculated points', err);
-      }
+    if (playedSeconds > 0) {
+      event.target.seekTo(playedSeconds, true);
     }
+    resetControlsTimeout();
+  }, [playedSeconds]);
 
-    if (videoData?.watched_time) {
-      event.target.seekTo(videoData.watched_time, true);
-    }
-    if (videoData?.watched_time) {
-      event.target.seekTo(videoData.watched_time, true);
-    }
-
-    if (pomodoroPhase == 'work') {
-      event.target.pauseVideo();
-    }
-  };
-
-  const route = useRouter();
-
-  const onPlayerEnd: YouTubeProps['onEnd'] = (event) => {
+  const onPlayerEnd: YouTubeProps['onEnd'] = useCallback((event: { target: { getDuration: () => number; }; }) => {
+    if (!mountedRef.current) return;
+    
     const finalTime = Math.floor(event.target.getDuration());
     updateWatchedTimeOnServer(finalTime, 'completed');
     toast.success('🎉 مبروك! أنهيت المهمة بنجاح.');
-
+    
     setTimeout(() => {
-      route.back();
+      if (mountedRef.current) {
+        router.back();
+      }
     }, 3000);
-  };
+  }, [updateWatchedTimeOnServer]);
 
-  const getYouTubeId = (url: string) => {
+  const getYouTubeId = useCallback((url: string) => {
+    if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url?.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-  };
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }, []);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const handleMouseMove = useCallback(() => {
+    if (!mountedRef.current) return;
+    setControlsVisible(true);
+    resetControlsTimeout();
+  }, [resetControlsTimeout]);
 
-  const percentage = duration > 0 ? (playedSeconds / duration) * 100 : 0;
-  const remainingTime = duration - playedSeconds;
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove, { passive: true });
+    }
+    
+    const handleKeyDownWrapper = (e: KeyboardEvent) => handleKeyDown(e);
+    window.addEventListener('keydown', handleKeyDownWrapper, { passive: true });
+    
+    return () => {
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+      }
+      window.removeEventListener('keydown', handleKeyDownWrapper);
+    };
+  }, [handleMouseMove, handleKeyDown]);
 
-  if (!videoData)
-    return (
-      <div className="h-screen bg-black text-white flex items-center justify-center">
-        Loading...
-      </div>
-    );
+  const youtubeId = useMemo(() => {
+    return videoData ? getYouTubeId(videoData.VideoURL) : undefined;
+  }, [videoData]);
+
+  if (!videoData) return (
+    <div className="h-screen bg-black text-white flex items-center justify-center font-mono">
+      LOADING SESSION...
+    </div>
+  );
+
+  if (forceLandscape && window.innerWidth < 768) {
+    return <RotatePhone />;
+  }
 
   return (
-    <div className="relative h-screen w-screen bg-black overflow-hidden">
-      <div className="absolute inset-0 w-full h-full">
-        <AnimatePresence>
-          {motivationMsg && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 1.5, filter: 'blur(20px)' }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 "
-            >
-              <div
-                style={{ borderColor: currentGlowColor || "", boxShadow: `0 0 40px ${currentGlowColor}` }}
-                className="bg-black/60 backdrop-blur-xl px-12 py-6 rounded-3xl border-4 shadow-2xl transition-all duration-500"
-              >
-                <h2
-                  style={{ color: currentGlowColor || "", textShadow: `0 0 20px ${currentGlowColor}` }}
-                  className="text-5xl font-black text-center italic tracking-widest uppercase"
-                >
-                  {motivationMsg}
-                </h2>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <YouTube
-          videoId={getYouTubeId(videoData.VideoURL) || ''}
-          onReady={onPlayerReady}
-          onEnd={onPlayerEnd}
-          className="w-full h-full"
-          opts={{
-            height: '100%',
-            width: '100%',
-            playerVars: { autoplay: 1, controls: 1, modestbranding: 1 },
-          }}
+    <div 
+      className="relative h-[100dvh] w-screen bg-black overflow-hidden flex items-center justify-center landscape:justify-start" 
+      ref={videoContainerRef}
+    >
+      <style jsx global>{`
+        /* تصميم للشاشات الكبيرة والهواتف في الوضع الأفقي */
+        iframe {
+          width: 100vw !important;
+          height: 100vh !important;
+          object-fit: contain;
+          position: absolute;
+          top: 0;
+          left: 0;
+          background-color: black;
+        }
+        
+        /* تحسين للهواتف في الوضع الأفقي */
+        @media (max-width: 767px) and (orientation: landscape) {
+          iframe {
+            object-fit: cover !important;
+            transform: scale(1.1); /* تكبير بسيط لملء الشاشة */
+          }
+        }
+        
+        /* للشاشات الكبيرة */
+        @media (min-width: 768px) {
+          iframe {
+            object-fit: cover !important;
+          }
+        }
+        
+        body { 
+          overflow: hidden; 
+          margin: 0; 
+          padding: 0; 
+          user-select: none;
+          background-color: black;
+        }
+        
+        /* منع التداخل مع عناصر التحكم على الهواتف */
+        @media (max-width: 767px) {
+          .video-controls-container {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+          }
+        }
+      `}</style>
+
+      <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
+        <MotivationOverlay 
+          motivationMsg={motivationMsg} 
+          achievementGlow={achievementGlow} 
+          currentGlowColor={currentGlowColor} 
         />
       </div>
 
-      <AnimatePresence>
-        {achievementGlow && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: [0, 0.8, 0.4, 0.8, 0],
-            }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute inset-0 pointer-events-none z-40"
-            style={{
-              boxShadow: `inset 0 0 100px ${currentGlowColor}, inset 0 0 200px ${currentGlowColor}44`,
-              background: `radial-gradient(circle, transparent 40%, ${currentGlowColor}22 100%)`,
-            }}
+      <div className="absolute pointer-events-none inset-0 z-0 bg-black w-full h-full flex items-center justify-center">
+        <YouTube
+          key={youtubeId} 
+          videoId={youtubeId as any}
+          opts={{
+            height: '100%',
+            width: '100%',
+            playerVars: {
+              autoplay: 1,
+              controls: 0,
+              rel: 0,
+              showinfo: 0,
+              iv_load_policy: 3,
+              modestbranding: 1,
+              disablekb: 1,
+              playsinline: 1, 
+            },
+          }}
+          className="w-full h-full"
+          onReady={onPlayerReady}
+          onEnd={onPlayerEnd}
+          onError={(e) => console.error('YouTube player error:', e)}
+        />
+      </div>
+
+      <div className="absolute top-4 left-4 z-30 scale-75 sm:scale-100 origin-top-left">
+        <PomodoroTimer 
+          phase={pomodoroPhase} 
+          timeLeft={pomodoroTimeLeft} 
+          formatTime={formatPomodoroTime} 
+        />
+      </div>
+
+      <div className="absolute inset-0 z-30 pointer-events-none flex flex-col justify-end">
+        <div className="pointer-events-auto w-full video-controls-container">
+          <VideoControls
+            isPlaying={isPlaying}
+            isMuted={isMuted}
+            controlsVisible={controlsVisible}
+            playedSeconds={playedSeconds}
+            duration={duration}
+            togglePlay={togglePlay}
+            toggleMute={toggleMute}
+            handleSeek={handleSeek}
+            formatTime={formatTime}
+            onRewind={() => playerRef.current?.seekTo(playerRef.current.getCurrentTime() - 5)}
+            onFastForward={() => playerRef.current?.seekTo(playerRef.current.getCurrentTime() + 5)}
+            onReset={() => playerRef.current?.seekTo(0)}
           />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showMouseWarning && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-          >
-            <div className="bg-gradient-to-r from-red-600/90 to-orange-600/90 backdrop-blur-md px-12 py-8 rounded-2xl border-2 border-white/30 shadow-2xl max-w-lg mx-4">
-              <h2 className="text-3xl font-bold text-white text-center drop-shadow-md mb-4">
-                ⚠️ لا تخرج!
-              </h2>
-              <p className="text-xl text-white text-center opacity-90 mb-2">انتبه</p>
-              <p className="text-lg text-white/80 text-center">ركز لم يتبقى الكثير لتنهي الدرس</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showBreakMessage && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
-          >
-            <div className="bg-gradient-to-r from-red-500/90 to-orange-500/90 backdrop-blur-md px-12 py-8 rounded-2xl border-2 border-white/30 shadow-2xl">
-              <h2 className="text-4xl font-bold text-white text-center drop-shadow-md mb-4">
-                ارتاح قليلا
-              </h2>
-              <p className="text-xl text-white text-center opacity-90">خذ استراحة لمدة 5 دقائق</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm p-3 rounded-xl border border-white/20 shadow-lg z-30">
-        <div className="flex flex-col items-center">
-          <div
-            className={`text-lg font-bold ${pomodoroPhase === 'work' ? 'text-green-400' : 'text-yellow-400'}`}
-          >
-            {pomodoroPhase === 'work' ? '⏳ وقت العمل' : '☕ استراحة'}
-          </div>
-          <div className="text-2xl font-mono font-bold text-white">
-            {formatTime(pomodoroTimeLeft)}
-          </div>
-          <div className="text-xs text-gray-300 mt-1">
-            {pomodoroPhase === 'work' ? 'باقي للاستراحة' : 'باقي للعمل'}
-          </div>
         </div>
       </div>
 
-      <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/90 to-transparent text-white flex justify-between items-start pointer-events-none">
-        <div>
-          <h1 className="text-2xl font-bold">{videoData.Title}</h1>
-          <p className="text-white font-medium">{videoData.Description}</p>
-        </div>
-        <div className="bg-black/50 p-3 rounded-xl border border-white/10">
-          <span className="text-2xl font-mono font-bold">{Math.floor(remainingTime / 60)}</span>
-          <span className="text-xs ml-1 text-gray-400 uppercase">Min Left</span>
-        </div>
+      <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
+        <BreakMessage showBreakMessage={showBreakMessage} />
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent">
-        <div className="flex justify-between text-xs font-bold text-white mb-2 px-1">
-          <span className="bg-muted px-2 py-0.5 rounded">
-            {Math.floor(playedSeconds / 60)}:{String(playedSeconds % 60).padStart(2, '0')}
-          </span>
-          <span>{Math.round(percentage)}%</span>
-        </div>
-        <Progress value={percentage} className="h-2 bg-white/10" />
+      <div className="absolute top-4 right-4 z-30 hidden md:block">
+        <VideoInfo 
+          videoData={videoData} 
+          remainingTime={duration - playedSeconds} 
+          percentage={duration > 0 ? (playedSeconds / duration) * 100 : 0} 
+          playedSeconds={playedSeconds} 
+        />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Save, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Save, Settings2, Settings } from 'lucide-react';
 
 import {
   Dialog,
@@ -82,6 +82,9 @@ const SettingsDialog = () => {
         { id: 'milestoneMsgs', value: milestoneMsgs },
       ];
 
+      localStorage.setItem("work" , String(pomoTime))
+      localStorage.setItem("break" , String(breakTime));
+
       settings.forEach((item) => store.put(item));
 
       transaction.oncomplete = () => toast.success('تم الحفظ بنجاح! ');
@@ -109,7 +112,7 @@ const SettingsDialog = () => {
           variant="outline"
           className="gap-2 bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
         >
-          <Settings2 size={18} /> الإعدادات
+          <Settings size={18} /> 
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl bg-zinc-950 border-zinc-800 text-white">

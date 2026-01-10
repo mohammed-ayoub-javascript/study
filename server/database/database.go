@@ -34,7 +34,15 @@ database, err := gorm.Open(postgres.New(postgres.Config{
 
 	DB = database
 
-	err = DB.AutoMigrate(&models.User{}, &models.Session{}, &models.Ask{})
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Session{},
+		&models.Books{},
+		&models.CustomMessages{},
+		&models.Subjects{},
+		&models.Tasks{},
+		&models.Note{},
+	)
 	if err != nil {
 		log.Fatal("Migration Failed: ", err)
 	}

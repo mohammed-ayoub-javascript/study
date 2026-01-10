@@ -13,34 +13,60 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import Header from '@/components/global/header';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { API } from '@/lib/api';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const formSchema = z.object({
   title: z.string().min(2, 'العنوان يجب أن يكون أكثر من حرفين'),
   description: z.string().optional(),
   videoUrl: z.string().url('يرجى إدخال رابط فيديو صحيح'),
   note: z.string().optional(),
-  subject: z.string(),
+  SubjectId: z.string().min(1, 'يرجى اختيار مادة'), 
   points: z.number().min(0).default(0),
 });
 
 const SessionNew = () => {
   const route = useRouter();
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      route.push('/auth');
+      route.push("/");
+      return;
     }
+
+    const fetchSubjects = async () => {
+      try {
+        const response = await axios.get(`${API}/api/subjects`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSubjects(response.data || []);
+      } catch (error) {
+        toast.error("فشل في تحميل المواد");
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
   }, [route]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema) as any,
     defaultValues: {
@@ -48,7 +74,7 @@ const SessionNew = () => {
       description: '',
       videoUrl: '',
       note: '',
-      subject: 'عام',
+      SubjectId: '',
       points: 0,
     },
   });
@@ -62,39 +88,26 @@ const SessionNew = () => {
         },
       });
 
-      if (response.status == 201) {
+      if (response.status === 201 || response.status === 200) {
         toast.success('تمت الإضافة بنجاح!');
         form.reset();
         route.back();
       }
     } catch (error) {
-      toast.error('خطأ في الاتصال');
+      toast.error('خطأ في الاتصال أو البيانات');
     }
   }
 
   return (
     <div className="min-h-screen w-full relative">
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundColor: '#0a0a0a',
-          backgroundImage: `
-       radial-gradient(circle at 25% 25%, #222222 0.5px, transparent 1px),
-       radial-gradient(circle at 75% 75%, #111111 0.5px, transparent 1px)
-     `,
-          backgroundSize: '10px 10px',
-          imageRendering: 'pixelated',
-        }}
-      />
-      <div className="flex justify-center items-center w-full flex-col  relative z-50">
-        <Header />
-        <Card className="w-full max-w-2xl flex  flex-col mt-10 bg-transparent ">
+      <div className="flex justify-center items-center w-full flex-col relative z-50">
+        <Card className="w-full max-w-2xl flex flex-col mt-10 bg-transparent border-white/10 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">إضافة حصة دراسية جديدة</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-white">إضافة حصة دراسية جديدة</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-white">
                 <FormField
                   control={form.control}
                   name="title"
@@ -102,8 +115,37 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>العنوان (Title)</FormLabel>
                       <FormControl>
-                        <Input placeholder="مثال: فيزياء - الوحدة الأولى" {...field} />
+                        <Input placeholder="مثال: فيزياء - الوحدة الأولى" {...field} className="bg-white/5 border-white/10" />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="SubjectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المادة الدراسية</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-white/5 border-white/10">
+                            <SelectValue placeholder={loadingSubjects ? "جاري التحميل..." : "اختر المادة"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                          {subjects.length > 0 ? (
+                            subjects.map((s) => (
+                              <SelectItem key={s.ID} value={s.ID}>
+                                {s.Title}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-2 text-sm text-gray-500 text-center">لا توجد مواد مضافة</div>
+                          )}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -116,7 +158,7 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>رابط الفيديو (Video URL)</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://youtube.com/..." {...field} />
+                        <Input placeholder="https://youtube.com/..." {...field} className="bg-white/5 border-white/10" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -130,20 +172,7 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>الوصف</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="ماذا ستتعلم في هذه الحصة؟" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>مادة</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="ماهي المادة ؟" {...field} />
+                        <Textarea placeholder="ماذا ستتعلم في هذه الحصة؟" {...field} className="bg-white/5 border-white/10" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -157,15 +186,16 @@ const SessionNew = () => {
                     <FormItem>
                       <FormLabel>ملاحظات إضافية</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="أي ملاحظات تود تذكرها لاحقاً" {...field} />
+                        <Textarea placeholder="أي ملاحظات تود تذكرها لاحقاً" {...field} className="bg-white/5 border-white/10" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full">
-                  <Plus />
+                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 transition-colors" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Plus className="ml-2" />}
+                  إضافة الحصة
                 </Button>
               </form>
             </Form>

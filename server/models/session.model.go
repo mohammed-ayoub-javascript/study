@@ -16,8 +16,8 @@ type Session struct {
 	Points      int    `gorm:"default:0"`
 	Status      string `gorm:"default:pending"`
 	WatchedTime int    `json:"watched_time" gorm:"default:0"`
-	Subject     string
-	UserID      string `json:"user_id" gorm:"index"`
+	SubjectId   string
+	UserId      string `json:"UserId" gorm:"index"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
