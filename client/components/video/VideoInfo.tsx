@@ -17,10 +17,7 @@ export const VideoInfo: React.FC<VideoInfoProps> = ({
   return (
     <>
       <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/90 to-transparent text-white flex justify-between items-start pointer-events-none">
-        <div>
-          <h1 className="text-2xl font-bold">{videoData.Title}</h1>
-          <p className="text-white font-medium">{videoData.Description}</p>
-        </div>
+        
         <div className="bg-black/50 p-3 rounded-xl border border-white/10">
           <span className="text-2xl font-mono font-bold">{Math.floor(remainingTime / 60)}</span>
           <span className="text-xs ml-1 text-gray-400 uppercase">Min Left</span>
